@@ -3,23 +3,30 @@
 <head>
 <meta charset="utf-8"/>
 <style>
-  @page { size: A4; margin: 22mm 22mm 22mm 22mm; }
-  body { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #1b1b1b; line-height: 1.5; }
-  h1 { font-size: 16pt; margin: 0 0 2px 0; }
-  .contact { color: #444; font-size: 9.5pt; margin-bottom: 22px; }
-  .to { margin-bottom: 16px; }
-  p { margin: 0 0 12px 0; white-space: pre-line; }
+  @page { size: A4; margin: 18mm 21mm 18mm 21mm; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10.5pt; color: #1a1a1a; line-height: 1.5; }
+  .head { border-bottom: 1.4pt solid #1f3a68; padding-bottom: 6pt; margin-bottom: 16pt; }
+  h1 { font-size: 19pt; letter-spacing: 2.5pt; color: #1f3a68; margin: 0; text-transform: uppercase; }
+  .contact { color: #333; font-size: 9pt; margin-top: 3pt; }
+  .date { text-align: right; color: #444; margin-bottom: 4pt; }
+  .to { margin-bottom: 14pt; }
+  .to .company { font-weight: bold; }
+  p { margin: 0 0 10pt 0; white-space: pre-line; text-align: justify; }
 </style>
 </head>
 <body>
-  <h1 th:text="${p.fullName}">Name</h1>
-  <div class="contact">
-    <span th:if="${p.email}" th:text="${p.email}">email</span>
-    <span th:if="${p.phone}" th:text="' · ' + ${p.phone}">phone</span>
-    <span th:if="${p.linkedinUrl}" th:text="' · ' + ${p.linkedinUrl}">linkedin</span>
+  <div class="head">
+    <h1 th:text="${p.fullName}">Name</h1>
+    <div class="contact">
+      <span th:if="${p.city}" th:text="${p.city}">City</span><span th:if="${p.phone}" th:text="'  ·  ' + ${p.phone}">phone</span><span th:if="${p.email}" th:text="'  ·  ' + ${p.email}">email</span>
+    </div>
+    <div class="contact" th:if="${p.linkedinUrl != null or p.githubUrl != null or p.portfolioUrl != null}">
+      <span th:if="${p.linkedinUrl}" th:text="${#strings.replace(#strings.replace(p.linkedinUrl,'https://',''),'www.','')}">linkedin</span><span th:if="${p.githubUrl}" th:text="'  ·  ' + ${#strings.replace(p.githubUrl,'https://','')}">github</span><span th:if="${p.portfolioUrl}" th:text="'  ·  ' + ${#strings.replace(p.portfolioUrl,'https://','')}">portfolio</span>
+    </div>
   </div>
+  <div class="date" th:text="${today}">1 January 2026</div>
   <div class="to">
-    <div th:text="${job.company}">Company</div>
+    <div class="company" th:text="${job.company}">Company</div>
     <div th:text="'Re: ' + ${job.title}">Re: title</div>
   </div>
   <p th:each="para : ${coverParagraphs}" th:text="${para}">paragraph</p>

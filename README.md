@@ -130,6 +130,11 @@ Greenhouse / Lever / Remotive APIs ─▶ JobSearchService ─▶ JobMatcher (sc
 - **Score** = title match 30 + your skills found in the description (up to 50) + preferred location 20.
 - **Tailoring is honest by design.** Only the summary and cover letter are AI-written. Your experience,
   projects and education are copied from your own resume word for word, so the AI can't invent a job or skill.
+- **Cover letters are built, not free-written.** JobPilot splits your resume into roles and projects, picks your
+  best-matching internship or job and your best-matching project, and asks the AI to rewrite only those lines.
+  Each paragraph is checked: if it adds a number, technology or cliché ("excited", "passion"…) that isn't in your
+  resume, a plain version of your own lines is used instead. The opening and closing are fixed, and the letter
+  points to your portfolio. Still read every letter before sending: a small local model can word a fact oddly.
 - **Outreach is opt-in, one email at a time.** Nothing is sent without your click, there's a daily limit
   (20 by default), and every email offers an easy opt-out. Guessed addresses are labelled as guesses.
 - **Auto-fill never submits.** Automated submissions often go wrong (wrong answers to screening questions,

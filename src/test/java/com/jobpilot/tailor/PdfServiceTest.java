@@ -41,4 +41,11 @@ class PdfServiceTest {
         assertThat(PdfService.prettySkill("aws")).isEqualTo("AWS");
         assertThat(PdfService.prettySkill("postgresql")).isEqualTo("PostgreSQL");
     }
+
+    @Test
+    void replacesCharactersTheBuiltInFontsLack() {
+        org.assertj.core.api.Assertions.assertThat(PdfService.pdfSafe("Controller → Service → Repository ✓"))
+                .isEqualTo("Controller <span style=\"white-space: nowrap\">-&gt;</span> Service "
+                        + "<span style=\"white-space: nowrap\">-&gt;</span> Repository +");
+    }
 }

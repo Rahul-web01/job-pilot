@@ -58,6 +58,7 @@ public class PdfService {
         ctx.setVariable("skills", orderedSkills(job, profile));
         ctx.setVariable("body", body(profile.getResumeText(), profile));
         ctx.setVariable("coverParagraphs", paragraphs(job.getCoverLetter()));
+        ctx.setVariable("today", java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)));
         render(templates.process("pdf/resume", ctx), dir(job).resolve(RESUME));
         render(templates.process("pdf/cover-letter", ctx), dir(job).resolve(COVER_LETTER));
     }
@@ -149,8 +150,16 @@ public class PdfService {
         return List.of(text.split("\\n\\s*\\n")).stream().map(String::strip).filter(s -> !s.isEmpty()).toList();
     }
 
+    private static final String NOWRAP = "<span style=\"white-space: nowrap\">%s</span>";
+
+    /** The built-in PDF fonts have no arrows or check marks; swap them for characters they do have. */
+    static String pdfSafe(String html) {
+        return html.replace("→", NOWRAP.formatted("-&gt;")).replace("←", NOWRAP.formatted("&lt;-"))
+                .replace("⇒", NOWRAP.formatted("=&gt;")).replace("✓", "+").replace("✔", "+");
+    }
+
     private static void render(String html, Path target) throws IOException {
-        var doc = new W3CDom().fromJsoup(Jsoup.parse(html));
+        var doc = new W3CDom().fromJsoup(Jsoup.parse(pdfSafe(html)));
         try (OutputStream os = Files.newOutputStream(target)) {
             new PdfRendererBuilder()
                     .useFastMode()
