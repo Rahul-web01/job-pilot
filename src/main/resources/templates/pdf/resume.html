@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8"/>
+<style>
+  @page { size: A4; margin: 16mm 16mm 16mm 16mm; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10.5pt; color: #1b1b1b; line-height: 1.35; }
+  h1 { font-size: 20pt; margin: 0 0 2px 0; }
+  .contact { color: #444; font-size: 9.5pt; margin-bottom: 10px; }
+  h2 { font-size: 11pt; text-transform: uppercase; letter-spacing: .5px; color: #1f4e8c;
+       border-bottom: 1px solid #c9d3e0; padding-bottom: 2px; margin: 12px 0 5px 0; }
+  p { margin: 0 0 4px 0; }
+  .skills span { display: inline-block; margin: 0 6px 3px 0; }
+  .line { margin: 0 0 1px 0; }
+  h2 { page-break-after: avoid; }
+</style>
+</head>
+<body>
+  <h1 th:text="${p.fullName}">Name</h1>
+  <div class="contact">
+    <span th:if="${p.email}" th:text="${p.email}">email</span>
+    <span th:if="${p.phone}" th:text="' · ' + ${p.phone}">phone</span>
+    <span th:if="${p.city}" th:text="' · ' + ${p.city}">city</span>
+    <span th:if="${p.linkedinUrl}" th:text="' · ' + ${p.linkedinUrl}">linkedin</span>
+    <span th:if="${p.githubUrl}" th:text="' · ' + ${p.githubUrl}">github</span>
+    <span th:if="${p.portfolioUrl}" th:text="' · ' + ${p.portfolioUrl}">site</span>
+  </div>
+
+  <th:block th:if="${job.tailoredSummary}">
+    <h2>Summary</h2>
+    <p th:text="${job.tailoredSummary}">Summary</p>
+  </th:block>
+
+  <h2>Key skills</h2>
+  <p class="skills"><span th:each="s, it : ${skills}" th:text="${s} + (${it.last} ? '' : ' ·')">skill</span></p>
+
+  <th:block th:each="l : ${body}">
+    <h2 th:if="${l.heading}" th:text="${l.text}">Experience</h2>
+    <p class="line" th:unless="${l.heading}" th:text="${l.text}">line</p>
+  </th:block>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('JobPilot')}"></head>
+<body>
+<meta th:if="${running}" http-equiv="refresh" content="8">
+<header th:replace="~{fragments :: nav}"></header>
+<th:block th:replace="~{fragments :: flash}"></th:block>
+
+<section class="toolbar">
+  <form method="get" action="/" class="filters">
+    <input type="search" name="q" th:value="${q}" placeholder="Title or company" aria-label="Title or company">
+    <input type="text" name="location" th:value="${location}" placeholder="Location" aria-label="Location">
+    <select name="source" aria-label="Source">
+      <option value="">All sources</option>
+      <option th:each="s : ${sources}" th:value="${s}" th:text="${s}" th:selected="${s == source}">src</option>
+    </select>
+    <label class="inline">Min score
+      <input type="number" name="minScore" min="0" max="100" step="5" th:value="${minScore}">
+    </label>
+    <button type="submit" class="ghost">Filter</button>
+    <a th:if="${filtered}" href="/" class="clear">Clear</a>
+  </form>
+  <form method="post" action="/search">
+    <button type="submit" th:disabled="${running}" th:text="${running} ? 'Searching…' : 'Search jobs now'">Search jobs now</button>
+  </form>
+</section>
+
+<section class="stats">
+  <div class="stat"><span class="num" th:text="${total}">0</span><span>Jobs found</span></div>
+  <div class="stat"><span class="num" th:text="${applied}">0</span><span>Applied</span></div>
+  <div class="stat"><span class="num" th:text="${interviews}">0</span><span>Interviews</span></div>
+  <div class="stat"><span class="num" th:text="${interviewRate} + '%'">0%</span><span>Interview rate</span></div>
+  <div class="stat"><span class="num" th:text="${skipped}">0</span><span>Skipped</span></div>
+  <div class="stat sources">
+    <span th:each="row : ${bySource}" class="pill" th:text="${row[0]} + ': ' + ${row[1]}">src</span>
+    <span class="muted" th:if="${lastRun != null}"
+          th:text="'Last search: ' + ${#temporals.format(lastRun.finishedAt.atZone(T(java.time.ZoneId).systemDefault()), 'dd MMM HH:mm')} + ' · ' + ${lastRun.added} + ' new'">last</span>
+  </div>
+</section>
+
+<p class="hint" th:if="${total == 0}">No jobs yet. Set your niche on the <a href="/profile">Profile</a> tab, then press <strong>Search jobs now</strong>.</p>
+
+<main class="board">
+  <section class="column" th:each="col : ${columns}">
+    <h2><span th:text="${col.key.label}">Status</span> <span class="count" th:text="${col.value.size()}">0</span></h2>
+    <div class="empty muted" th:if="${col.value.isEmpty()}">Nothing here</div>
+    <article class="card" th:each="job : ${col.value}">
+      <div class="card-head">
+        <a class="title" th:href="@{/jobs/{id}(id=${job.id})}" th:text="${job.title}">Title</a>
+        <span class="score" th:classappend="${job.score >= 70} ? 'hi' : (${job.score >= 50} ? 'mid' : 'lo')"
+              th:text="${job.score}">0</span>
+      </div>
+      <div class="meta"><strong th:text="${job.company}">Company</strong> · <span th:text="${job.location}">Location</span></div>
+      <div class="meta muted" th:text="${job.source}">source</div>
+      <form method="post" th:action="@{/jobs/{id}/status(id=${job.id})}" class="move">
+        <input type="hidden" name="back" th:value="'/?q=' +${#uris.escapeQueryParam(q)} + '&location=' + ${#uris.escapeQueryParam(location)} + '&source=' + ${source} + '&minScore=' + ${minScore}">
+        <select name="status" onchange="this.form.submit()" aria-label="Move to">
+          <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == job.status}">s</option>
+        </select>
+      </form>
+    </article>
+  </section>
+</main>
+</body>
+</html>

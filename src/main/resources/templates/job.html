@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${job.title} + ' · JobPilot')}"></head>
+<body>
+<meta th:if="${busy}" http-equiv="refresh" content="5">
+<header th:replace="~{fragments :: nav}"></header>
+<th:block th:replace="~{fragments :: flash}"></th:block>
+
+<main class="detail">
+  <div class="detail-head">
+    <div>
+      <h1 th:text="${job.title}">Title</h1>
+      <p class="meta"><strong th:text="${job.company}">Company</strong> · <span th:text="${job.location}">Location</span>
+        · <span class="muted" th:text="${job.source}">source</span></p>
+      <p class="meta muted" th:if="${job.postedAt != null}"
+         th:text="'Posted ' + ${#temporals.format(job.postedAt.atZone(T(java.time.ZoneId).systemDefault()), 'dd MMM yyyy')}">posted</p>
+    </div>
+    <span class="score big" th:classappend="${job.score >= 70} ? 'hi' : (${job.score >= 50} ? 'mid' : 'lo')"
+          th:text="${job.score}">0</span>
+  </div>
+
+  <div class="actions">
+    <a class="button ghost" th:href="${job.url}" target="_blank" rel="noopener">Open job posting ↗</a>
+    <form method="post" th:action="@{/jobs/{id}/status(id=${job.id})}">
+      <input type="hidden" name="back" th:value="'/jobs/' + ${job.id}">
+      <label class="inline">Status
+        <select name="status" onchange="this.form.submit()">
+          <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == job.status}">s</option>
+        </select>
+      </label>
+    </form>
+  </div>
+
+  <p th:if="${job.matchedSkills != null and !job.matchedSkills.isBlank()}">
+    <span class="muted">Your skills in this job:</span>
+    <span th:each="s : ${job.matchedSkills.split(', ')}" class="pill" th:text="${s}">skill</span>
+  </p>
+
+  <!-- ===== Step 1: tailor ===== -->
+  <section class="panel" id="documents">
+    <h2>1 · Tailored resume and cover letter</h2>
+    <p class="muted">Your local AI rewrites the summary at the top of your resume for this job and writes a cover letter.
+      Your experience, projects and education are copied from your uploaded resume word for word.</p>
+    <div class="flash error" th:if="${problem}"><span th:text="${problem}"></span> <a href="/profile">Open Profile</a></div>
+    <div class="status-line" th:if="${job.tailorMessage}" th:classappend="${job.tailorState?.name() == 'ERROR'} ? 'error'">
+      <span class="spinner" th:if="${job.tailorState?.name() == 'RUNNING'}"></span>
+      <span th:text="${job.tailorMessage}">msg</span>
+    </div>
+    <div class="actions">
+      <form method="post" th:action="@{/jobs/{id}/tailor(id=${job.id})}">
+        <button type="submit" th:disabled="${problem != null or job.tailorState?.name() == 'RUNNING'}"
+                th:text="${job.tailored} ? 'Write again with AI' : 'Tailor with AI'">Tailor with AI</button>
+      </form>
+      <a class="button ghost" th:if="${hasResumePdf}" th:href="@{/jobs/{id}/files/resume(id=${job.id})}" target="_blank">View resume PDF</a>
+      <a class="button ghost" th:if="${hasCoverPdf}" th:href="@{/jobs/{id}/files/cover-letter(id=${job.id})}" target="_blank">View cover letter PDF</a>
+    </div>
+    <form method="post" th:action="@{/jobs/{id}/documents(id=${job.id})}" class="stack" th:if="${job.tailored}">
+      <label for="summary">Resume summary</label>
+      <textarea id="summary" name="summary" rows="4" th:text="${job.tailoredSummary}"></textarea>
+      <label for="coverLetter">Cover letter</label>
+      <textarea id="coverLetter" name="coverLetter" rows="14" th:text="${job.coverLetter}"></textarea>
+      <button type="submit" class="ghost">Save edits and rebuild PDFs</button>
+    </form>
+  </section>
+
+  <!-- ===== Step 2: apply ===== -->
+  <section class="panel">
+    <h2>2 · Apply</h2>
+    <p class="muted" th:if="${autoFillSupported}">Opens the application form in Chrome and fills in your details, resume and cover letter.
+      It does <strong>not</strong> press Submit: you check the form, answer any custom questions and submit it yourself.</p>
+    <p class="muted" th:unless="${autoFillSupported}">Auto-fill works for Greenhouse and Lever jobs. For this one, open the posting and apply by hand,
+      using the PDFs above.</p>
+    <div class="status-line" th:if="${job.applyMessage}" th:classappend="${job.applyState?.name() == 'ERROR'} ? 'error'">
+      <span class="spinner" th:if="${job.applyState?.name() == 'RUNNING'}"></span>
+      <span th:text="${job.applyMessage}">msg</span>
+    </div>
+    <div class="actions">
+      <form method="post" th:action="@{/jobs/{id}/autofill(id=${job.id})}" th:if="${autoFillSupported}">
+        <button type="submit" th:disabled="${job.applyState?.name() == 'RUNNING'}">Auto-fill application</button>
+      </form>
+      <a class="button ghost" th:href="${applyUrl}" target="_blank" rel="noopener">Open form myself ↗</a>
+      <form method="post" th:action="@{/jobs/{id}/submitted(id=${job.id})}" th:if="${job.status.name() != 'APPLIED'}">
+        <button type="submit" class="ghost">I submitted it → mark Applied</button>
+      </form>
+    </div>
+  </section>
+
+  <form method="post" th:action="@{/jobs/{id}/notes(id=${job.id})}" class="stack">
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="3" th:text="${job.notes}"></textarea>
+    <button type="submit" class="ghost">Save notes</button>
+  </form>
+
+  <h2>Job description</h2>
+  <pre class="description" th:text="${job.description}">Description</pre>
+</main>
+</body>
+</html>

@@ -1,0 +1,99 @@
+server:
+  port: 8080
+  # Listen only on this computer. Your resume and details are never exposed to the network.
+  address: 127.0.0.1
+
+spring:
+  application:
+    name: job-pilot
+  datasource:
+    # File database in ./data — survives restarts, free, nothing to install
+    url: jdbc:h2:file:${jobpilot.data-dir}/jobpilot;AUTO_SERVER=TRUE
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  thymeleaf:
+    cache: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+jobpilot:
+  # Where the database, uploaded resume and generated PDFs are kept
+  data-dir: ./data
+
+  # Free local AI used to tailor resumes and write cover letters. Install from https://ollama.com
+  ollama:
+    url: http://localhost:11434
+    model: llama3.2
+
+  # ----------------------------------------------------------------------
+  # STARTING DEFAULTS for a new install only.
+  # After the first run, change these on the Profile tab in the app.
+  # ----------------------------------------------------------------------
+  profile:
+    target-titles:
+      - java
+      - backend
+      - back-end
+      - software engineer
+      - software developer
+      - sde
+    skills:
+      - java
+      - spring boot
+      - spring
+      - microservices
+      - rest api
+      - sql
+      - mysql
+      - postgresql
+      - hibernate
+      - docker
+      - kafka
+      - aws
+      - git
+    exclude-title-words:
+      - senior staff
+      - principal
+      - director
+      - manager
+      - lead
+      - intern
+      - android
+      - ios
+    locations:
+      - india
+      - bengaluru
+      - bangalore
+      - hyderabad
+      - pune
+      - gurgaon
+      - gurugram
+      - noida
+      - remote
+
+  sources:
+    greenhouse-boards:
+      - groww
+      - razorpaysoftwareprivatelimited
+      - stripe
+      - databricks
+      - coinbase
+      - gitlab
+      - cloudflare
+      - mongodb
+    lever-companies:
+      - cred
+      - meesho
+      - palantir
+    remotive-searches:
+      - java
+      - backend
+
+  # Run the search automatically every 6 hours while the app is running
+  search-cron: "0 0 */6 * * *"

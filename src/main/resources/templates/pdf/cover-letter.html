@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8"/>
+<style>
+  @page { size: A4; margin: 22mm 22mm 22mm 22mm; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #1b1b1b; line-height: 1.5; }
+  h1 { font-size: 16pt; margin: 0 0 2px 0; }
+  .contact { color: #444; font-size: 9.5pt; margin-bottom: 22px; }
+  .to { margin-bottom: 16px; }
+  p { margin: 0 0 12px 0; white-space: pre-line; }
+</style>
+</head>
+<body>
+  <h1 th:text="${p.fullName}">Name</h1>
+  <div class="contact">
+    <span th:if="${p.email}" th:text="${p.email}">email</span>
+    <span th:if="${p.phone}" th:text="' · ' + ${p.phone}">phone</span>
+    <span th:if="${p.linkedinUrl}" th:text="' · ' + ${p.linkedinUrl}">linkedin</span>
+  </div>
+  <div class="to">
+    <div th:text="${job.company}">Company</div>
+    <div th:text="'Re: ' + ${job.title}">Re: title</div>
+  </div>
+  <p th:each="para : ${coverParagraphs}" th:text="${para}">paragraph</p>
+</body>
+</html>

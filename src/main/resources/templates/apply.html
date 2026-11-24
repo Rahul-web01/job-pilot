@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Apply · JobPilot')}"></head>
+<body>
+<meta th:if="${busy}" http-equiv="refresh" content="5">
+<header th:replace="~{fragments :: nav}"></header>
+<th:block th:replace="~{fragments :: flash}"></th:block>
+
+<main class="detail wide">
+  <h1>Apply</h1>
+  <ol class="howto">
+    <li>On the <a href="/">Board</a>, move jobs you like to <strong>Shortlisted</strong>. They show up here.</li>
+    <li><strong>Tailor</strong> writes a resume summary and cover letter for the job with your local AI.</li>
+    <li><strong>Auto-fill</strong> opens the form in Chrome and fills it. You check it and press Submit there.</li>
+    <li>Click <strong>Submitted</strong> so the job moves to Applied.</li>
+  </ol>
+
+  <div class="flash error" th:if="${problem}"><span th:text="${problem}"></span> <a href="/profile">Open Profile</a></div>
+
+  <section class="panel">
+    <h2>To apply <span class="count" th:text="${queue.size()}">0</span></h2>
+    <p class="muted" th:if="${queue.isEmpty()}">Nothing shortlisted yet. Go to the <a href="/">Board</a> and move some jobs to Shortlisted.</p>
+    <table class="queue" th:unless="${queue.isEmpty()}">
+      <thead><tr><th>Job</th><th>Score</th><th>Documents</th><th>Form</th><th></th></tr></thead>
+      <tbody>
+      <tr th:each="job : ${queue}">
+        <td>
+          <a class="title" th:href="@{/jobs/{id}(id=${job.id})}" th:text="${job.title}">Title</a>
+          <div class="meta"><strong th:text="${job.company}">Co</strong> · <span th:text="${job.location}">Loc</span></div>
+        </td>
+        <td><span class="score" th:classappend="${job.score >= 70} ? 'hi' : (${job.score >= 50} ? 'mid' : 'lo')" th:text="${job.score}">0</span></td>
+        <td>
+          <div class="status-line small" th:if="${job.tailorMessage}" th:classappend="${job.tailorState?.name() == 'ERROR'} ? 'error'">
+            <span class="spinner" th:if="${job.tailorState?.name() == 'RUNNING'}"></span><span th:text="${job.tailorState?.name() == 'DONE' ? 'Ready' : job.tailorMessage}">msg</span>
+          </div>
+          <form method="post" th:action="@{/jobs/{id}/tailor(id=${job.id})}">
+            <input type="hidden" name="back" value="/apply">
+            <button type="submit" class="small" th:classappend="${job.tailored} ? 'ghost'"
+                    th:disabled="${problem != null or job.tailorState?.name() == 'RUNNING'}"
+                    th:text="${job.tailored} ? 'Re-tailor' : 'Tailor'">Tailor</button>
+          </form>
+          <a th:if="${job.tailored}" th:href="@{/jobs/{id}(id=${job.id})} + '#documents'" class="small-link">Review / edit</a>
+        </td>
+        <td>
+          <div class="status-line small" th:if="${job.applyState != null}" th:classappend="${job.applyState?.name() == 'ERROR'} ? 'error'">
+            <span class="spinner" th:if="${job.applyState?.name() == 'RUNNING'}"></span>
+            <span th:text="${job.applyState?.name() == 'RUNNING' ? 'Filling…' : (job.applyState?.name() == 'DONE' ? 'Filled, check Chrome' : 'Failed')}">st</span>
+          </div>
+          <form method="post" th:action="@{/jobs/{id}/autofill(id=${job.id})}" th:if="${job.source == 'greenhouse' or job.source == 'lever'}">
+            <input type="hidden" name="back" value="/apply">
+            <button type="submit" class="small" th:disabled="${job.applyState?.name() == 'RUNNING'}">Auto-fill</button>
+          </form>
+          <a th:unless="${job.source == 'greenhouse' or job.source == 'lever'}" th:href="${job.url}" target="_blank" rel="noopener" class="small-link">Apply on site ↗</a>
+        </td>
+        <td>
+          <form method="post" th:action="@{/jobs/{id}/submitted(id=${job.id})}">
+            <input type="hidden" name="back" value="/apply">
+            <button type="submit" class="small ghost">Submitted</button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel" th:unless="${done.isEmpty()}">
+    <h2>Applied</h2>
+    <table class="queue">
+      <thead><tr><th>Job</th><th>Status</th><th>Since</th></tr></thead>
+      <tbody>
+      <tr th:each="job : ${done}">
+        <td><a class="title" th:href="@{/jobs/{id}(id=${job.id})}" th:text="${job.title}">T</a>
+          <div class="meta" th:text="${job.company}">Co</div></td>
+        <td th:text="${job.status.label}">Applied</td>
+        <td class="muted" th:text="${#temporals.format(job.statusChangedAt.atZone(T(java.time.ZoneId).systemDefault()), 'dd MMM')}">date</td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>

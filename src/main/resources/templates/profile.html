@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Profile · JobPilot')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<th:block th:replace="~{fragments :: flash}"></th:block>
+
+<main class="detail">
+  <h1>Your profile</h1>
+  <p class="muted">Everything here stays on this computer, in the <code>data</code> folder. Nothing is uploaded anywhere
+    until you auto-fill an application.</p>
+
+  <!-- Setup checklist -->
+  <section class="panel checklist">
+    <h2>Setup</h2>
+    <ul>
+      <li th:classappend="${p.hasContactDetails()} ? 'ok' : 'todo'">Your details (name and email at least)</li>
+      <li th:classappend="${p.hasResume()} ? 'ok' : 'todo'">Resume uploaded</li>
+      <li th:classappend="${ollamaOk and modelInstalled} ? 'ok' : 'todo'">
+        Local AI (Ollama) with model <code th:text="${p.ollamaModel}">llama3.2</code>
+        <span class="muted" th:if="${!ollamaOk}"> · not running. Install from ollama.com, then run <code>ollama pull llama3.2</code></span>
+        <span class="muted" th:if="${ollamaOk and !modelInstalled}" th:text="' · model not installed. Run: ollama pull ' + ${p.ollamaModel}"></span>
+      </li>
+      <li th:classappend="${chrome} ? 'ok' : 'warn'">Google Chrome for auto-fill
+        <span class="muted" th:unless="${chrome}"> · not found; Playwright downloads its own Chromium on first auto-fill</span></li>
+    </ul>
+  </section>
+
+  <!-- Resume upload -->
+  <section class="panel" id="resume">
+    <h2>Resume</h2>
+    <form method="post" action="/profile/resume" enctype="multipart/form-data" class="actions">
+      <input type="file" name="file" accept=".pdf,.txt,.md" required aria-label="Resume file">
+      <button type="submit">Upload resume</button>
+    </form>
+    <p class="muted" th:if="${p.resumeFileName}"
+       th:text="'Current: ' + ${p.resumeFileName} + ' · uploaded ' + ${#temporals.format(p.resumeUploadedAt.atZone(T(java.time.ZoneId).systemDefault()), 'dd MMM yyyy HH:mm')}">current</p>
+    <p class="muted">PDF or text. The text below is what the AI reads and what goes into your tailored resume, so fix anything
+      that came out jumbled. Leave a blank line between sections.</p>
+  </section>
+
+  <form method="post" action="/profile" class="profile-form">
+    <section class="panel">
+      <textarea name="resumeText" rows="16" aria-label="Resume text" th:text="${p.resumeText}"
+                placeholder="Upload a resume above, or paste its text here."></textarea>
+    </section>
+
+    <section class="panel">
+      <h2>Your details <span class="muted">(used to fill application forms)</span></h2>
+      <div class="grid">
+        <label>First name <input name="firstName" th:value="${p.firstName}" autocomplete="given-name"></label>
+        <label>Last name <input name="lastName" th:value="${p.lastName}" autocomplete="family-name"></label>
+        <label>Email <input type="email" name="email" th:value="${p.email}" autocomplete="email"></label>
+        <label>Phone <input name="phone" th:value="${p.phone}" autocomplete="tel"></label>
+        <label>City <input name="city" th:value="${p.city}"></label>
+        <label>Current company <input name="currentCompany" th:value="${p.currentCompany}"></label>
+        <label>LinkedIn URL <input name="linkedinUrl" th:value="${p.linkedinUrl}"></label>
+        <label>GitHub URL <input name="githubUrl" th:value="${p.githubUrl}"></label>
+        <label>Portfolio / website <input name="portfolioUrl" th:value="${p.portfolioUrl}"></label>
+        <label>Years of experience <input name="yearsExperience" th:value="${p.yearsExperience}" placeholder="e.g. 2"></label>
+        <label>Notice period <input name="noticePeriod" th:value="${p.noticePeriod}" placeholder="e.g. Immediate / 30 days"></label>
+        <label>Expected salary <input name="expectedSalary" th:value="${p.expectedSalary}" placeholder="e.g. 12 LPA"></label>
+        <label class="wide">Work authorization <input name="workAuthorization" th:value="${p.workAuthorization}" placeholder="e.g. Indian citizen, no sponsorship needed"></label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Your niche <span class="muted">(one per line)</span></h2>
+      <div class="grid">
+        <label>Job titles to look for
+          <textarea name="targetTitles" rows="7" th:text="${p.targetTitles}"></textarea>
+          <small class="muted">A job is kept only if its title contains one of these.</small>
+        </label>
+        <label>Your skills
+          <textarea name="skills" rows="7" th:text="${p.skills}"></textarea>
+          <small class="muted">Each one found in a job description raises its score.</small>
+        </label>
+        <label>Skip titles containing
+          <textarea name="excludeTitleWords" rows="7" th:text="${p.excludeTitleWords}"></textarea>
+          <small class="muted">e.g. senior, staff, manager, intern.</small>
+        </label>
+        <label>Preferred locations
+          <textarea name="locations" rows="7" th:text="${p.locations}"></textarea>
+          <small class="muted">Jobs in these places get +20.</small>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Where to search <span class="muted">(one per line)</span></h2>
+      <div class="grid">
+        <label>Greenhouse companies
+          <textarea name="greenhouseBoards" rows="6" th:text="${p.greenhouseBoards}"></textarea>
+          <small class="muted">The name in boards.greenhouse.io/<b>name</b> (or paste the whole link).</small>
+        </label>
+        <label>Lever companies
+          <textarea name="leverCompanies" rows="6" th:text="${p.leverCompanies}"></textarea>
+          <small class="muted">The name in jobs.lever.co/<b>name</b> (or paste the whole link).</small>
+        </label>
+        <label>Remote job searches (Remotive)
+          <textarea name="remotiveSearches" rows="6" th:text="${p.remotiveSearches}"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Local AI</h2>
+      <div class="grid">
+        <label>Ollama URL <input name="ollamaUrl" th:value="${p.ollamaUrl}"></label>
+        <label>Model
+          <input name="ollamaModel" th:value="${p.ollamaModel}" list="models">
+          <datalist id="models"><option th:each="m : ${ollamaModels}" th:value="${m}"></option></datalist>
+          <small class="muted">Bigger models (e.g. llama3.1:8b, qwen2.5:7b) write better but run slower.</small>
+        </label>
+      </div>
+    </section>
+
+    <div class="save-bar">
+      <label class="inline"><input type="checkbox" name="rescore" value="true" checked> Re-score saved jobs with this niche</label>
+      <button type="submit">Save profile</button>
+    </div>
+  </form>
+</main>
+</body>
+</html>

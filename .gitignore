@@ -1,0 +1,14 @@
+# Build output
+target/
+
+# Your personal data: database, uploaded resume, generated PDFs. Never commit these.
+data/
+data-*/
+
+# Editors and local tool settings
+*.log
+.idea/
+*.iml
+.vscode/
+.claude/
+.DS_Store
