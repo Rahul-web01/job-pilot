@@ -15,6 +15,23 @@ when you fill in an application.
 
 Built with Java 21+, Spring Boot 4, H2, Thymeleaf, Playwright, PDFBox and OpenHTMLtoPDF.
 
+## Demo
+
+JobPilot runs on your own computer (it uses your local AI and keeps your resume private), so there is no
+public website to try. These screenshots are from a real run with a made-up demo profile.
+
+**Board**: 507 real openings found in one search, scored against the profile and tracked through each stage.
+
+![JobPilot board with scored jobs in pipeline columns](docs/board.png)
+
+**Tailoring**: the local AI (Ollama, llama3.2) wrote this resume summary and cover letter for the job, saved as PDFs.
+
+![Job page with an AI-written resume summary and cover letter](docs/job.png)
+
+**Apply**: shortlisted jobs ready to tailor and auto-fill, plus everything already applied to.
+
+![Apply page listing jobs to apply to and applied jobs](docs/apply.png)
+
 ---
 
 ## 1. Install (once)

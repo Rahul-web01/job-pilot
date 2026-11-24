@@ -2,6 +2,10 @@ server:
   port: 8080
   # Listen only on this computer. Your resume and details are never exposed to the network.
   address: 127.0.0.1
+  servlet:
+    session:
+      # Keep the session in a cookie, never in the URL (";jsessionid=…" links gave 404s on first visit)
+      tracking-modes: cookie
 
 spring:
   application:
