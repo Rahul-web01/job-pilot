@@ -164,3 +164,16 @@ code { font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 
   .queue tr { border-bottom: 1px solid var(--border); padding: 6px 0; }
   .queue td { border: 0; padding: 4px 0; }
 }
+
+/* Outreach */
+.mail { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 10px 0; background: var(--bg); }
+.mail.sent, .mail.replied { opacity: .95; }
+.mail-head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.mail input[name=subject] { width: 100%; }
+.row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+.inline-form { display: flex; gap: 6px; align-items: center; }
+.add-contact { margin: 10px 0; }
+.add-contact summary, details summary { cursor: pointer; color: var(--accent); }
+.small { font-size: 12px; }
+button.danger { color: var(--danger); border-color: var(--danger); }
+h3 { font-size: 14px; margin: 16px 0 4px; }

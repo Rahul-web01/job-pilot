@@ -54,12 +54,25 @@ public class ProfileService {
         p.setGreenhouseBoards(normalizeSlugs(form.getGreenhouseBoards()));
         p.setLeverCompanies(normalizeSlugs(form.getLeverCompanies()));
         p.setRemotiveSearches(normalizeList(form.getRemotiveSearches()));
+        p.setSmtpEmail(clean(form.getSmtpEmail()));
+        // The password box is always shown empty: keep the saved one unless a new one is typed
+        if (form.getSmtpPassword() != null && !form.getSmtpPassword().isBlank()) {
+            p.setSmtpPassword(form.getSmtpPassword().replace(" ", ""));
+        }
+        p.setDailySendLimit(form.getDailySendLimit());
         p.setOllamaUrl(blankTo(clean(form.getOllamaUrl()), props.ollama().url()));
         p.setOllamaModel(blankTo(clean(form.getOllamaModel()), props.ollama().model()));
         if (form.getResumeText() != null) {
             p.setResumeText(form.getResumeText().strip());
         }
         return repo.save(p);
+    }
+
+    @Transactional
+    public void forgetEmailPassword() {
+        Profile p = get();
+        p.setSmtpPassword(null);
+        repo.save(p);
     }
 
     /** Stores the uploaded PDF in ./data/uploads and extracts its text. */

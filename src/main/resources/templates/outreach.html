@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Outreach · JobPilot')}"></head>
+<body>
+<meta th:if="${busy}" http-equiv="refresh" content="5">
+<header th:replace="~{fragments :: nav}"></header>
+<th:block th:replace="~{fragments :: flash}"></th:block>
+
+<main class="detail wide">
+  <h1>Outreach</h1>
+  <ol class="howto">
+    <li>Open a job, scroll to <strong>Email HR or the hiring manager</strong> and press <strong>Find emails</strong>.</li>
+    <li>Press <strong>Write email</strong> next to a contact. The local AI drafts it with your resume attached.</li>
+    <li>Edit it here or on the job page, then press <strong>Send</strong>. It goes from your Gmail.</li>
+    <li>No reply after 6 days? A follow-up shows up below. Send one follow-up at most.</li>
+  </ol>
+  <p class="muted" th:text="${sentToday} + ' of ' + ${limit} + ' emails sent today.'"></p>
+  <div class="flash error" th:unless="${canSend}">To send, add your Gmail and an App Password on the <a href="/profile#email">Profile tab</a>.</div>
+
+  <section class="panel" th:unless="${followUps.isEmpty()}">
+    <h2>Follow-ups due <span class="count" th:text="${followUps.size()}">0</span></h2>
+    <div th:each="m : ${followUps}" class="mail">
+      <div class="mail-head">
+        <span><strong th:text="${m.toEmail}">to</strong> ·
+          <a th:href="@{/jobs/{id}(id=${m.jobId})}" th:text="${jobsById[m.jobId]?.title} + ' at ' + ${jobsById[m.jobId]?.company}">job</a></span>
+        <span class="muted" th:text="'Sent ' + ${#temporals.format(m.sentAt.atZone(T(java.time.ZoneId).systemDefault()), 'dd MMM')} + ', no reply yet'">sent</span>
+      </div>
+      <div class="actions">
+        <form method="post" th:action="@{/outreach/{id}/followup(id=${m.id})}"><input type="hidden" name="back" value="/outreach">
+          <button type="submit" class="small">Write follow-up</button></form>
+        <form method="post" th:action="@{/outreach/{id}/replied(id=${m.id})}"><input type="hidden" name="back" value="/outreach">
+          <button type="submit" class="small ghost">They replied</button></form>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Drafts <span class="count" th:text="${drafts.size()}">0</span></h2>
+    <p class="muted" th:if="${drafts.isEmpty()}">No drafts. Open a job on the <a href="/">Board</a> or <a href="/apply">Apply</a> tab to start one.</p>
+    <th:block th:each="m : ${drafts}">
+      <p class="meta"><a th:href="@{/jobs/{id}(id=${m.jobId})}" th:text="${jobsById[m.jobId]?.title} + ' at ' + ${jobsById[m.jobId]?.company}">job</a></p>
+      <div th:replace="~{fragments :: mail(${m}, '/outreach')}"></div>
+    </th:block>
+  </section>
+
+  <section class="panel" th:unless="${sent.isEmpty()}">
+    <h2>Sent <span class="count" th:text="${sent.size()}">0</span></h2>
+    <table class="queue">
+      <thead><tr><th>To</th><th>Job</th><th>Status</th><th>Sent</th></tr></thead>
+      <tbody>
+      <tr th:each="m : ${sent}">
+        <td th:text="${m.toEmail}">to</td>
+        <td><a th:href="@{/jobs/{id}(id=${m.jobId})} + '#outreach'" th:text="${jobsById[m.jobId]?.title}">job</a>
+          <div class="meta" th:text="${jobsById[m.jobId]?.company}">co</div></td>
+        <td th:text="${m.status.label} + (${m.followUp} ? ' (follow-up)' : '')">Sent</td>
+        <td class="muted" th:text="${#temporals.format(m.sentAt.atZone(T(java.time.ZoneId).systemDefault()), 'dd MMM HH:mm')}">date</td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>

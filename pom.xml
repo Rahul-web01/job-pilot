@@ -69,9 +69,21 @@
             <artifactId>playwright</artifactId>
             <version>1.63.0</version>
         </dependency>
+        <!-- Send outreach emails through your own Gmail (free) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Fake mail server for tests: nothing is really sent -->
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail-junit5</artifactId>
+            <version>2.1.12</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

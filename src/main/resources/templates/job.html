@@ -85,6 +85,66 @@
     </div>
   </section>
 
+  <!-- ===== Step 3: reach out ===== -->
+  <section class="panel" id="outreach">
+    <h2>3 · Email HR or the hiring manager</h2>
+    <p class="muted">Finds addresses published in the job post and on the company's own website, then the local AI
+      drafts a short email with your resume attached. Nothing is sent until you press <strong>Send</strong>.</p>
+    <div class="flash error" th:unless="${canSend}">To send, add your Gmail and an App Password on the <a href="/profile#email">Profile tab</a>.
+      You can still find contacts and write drafts.</div>
+
+    <div class="actions">
+      <form method="post" th:action="@{/jobs/{id}/domain(id=${job.id})}" class="inline-form">
+        <label class="inline">Company website
+          <input name="domain" th:value="${job.companyDomain}" placeholder="e.g. stripe.com" size="18">
+        </label>
+        <button type="submit" class="ghost small">Set</button>
+      </form>
+      <form method="post" th:action="@{/jobs/{id}/find-contacts(id=${job.id})}">
+        <button type="submit" onclick="this.disabled=true;this.textContent='Searching… (up to a minute)';this.form.submit()">Find emails</button>
+      </form>
+    </div>
+
+    <table class="queue" th:unless="${contacts.isEmpty()}">
+      <thead><tr><th>Email</th><th>Where from</th><th>Trust</th><th></th></tr></thead>
+      <tbody>
+      <tr th:each="c : ${contacts}">
+        <td><strong th:text="${c.email}">email</strong>
+          <div class="meta" th:if="${c.name != null}" th:text="${c.name} + (${c.role != null} ? ' · ' + ${c.role} : '')">name</div></td>
+        <td class="meta"><span th:text="${c.source.label}">src</span><div class="muted" th:text="${c.foundAt}">where</div></td>
+        <td><span class="score" th:classappend="${c.confidence >= 70} ? 'hi' : (${c.confidence >= 40} ? 'mid' : 'lo')" th:text="${c.confidence}">0</span></td>
+        <td class="row-actions">
+          <form method="post" th:action="@{/contacts/{id}/draft(id=${c.id})}" th:unless="${emailedContactIds.contains(c.id)}">
+            <button type="submit" class="small">Write email</button>
+          </form>
+          <span class="muted small" th:if="${emailedContactIds.contains(c.id)}">Email below</span>
+          <form method="post" th:action="@{/contacts/{id}/delete(id=${c.id})}">
+            <button type="submit" class="small ghost" title="Remove">✕</button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <details class="add-contact">
+      <summary>Add someone yourself</summary>
+      <form method="post" th:action="@{/jobs/{id}/contacts(id=${job.id})}" class="grid">
+        <label>Their email (if you know it) <input name="email" type="email" placeholder="name@company.com"></label>
+        <label>Or their name <input name="name" placeholder="e.g. Priya Sharma"></label>
+        <label>Their role <input name="role" placeholder="e.g. Technical Recruiter"></label>
+        <div><button type="submit" class="ghost">Add</button>
+          <p class="muted small">With only a name, I'll add the usual address patterns for the company, marked as guesses.</p></div>
+      </form>
+    </details>
+
+    <div th:unless="${mails.isEmpty()}">
+      <h3>Emails <span class="muted small" th:text="'· ' + ${sentToday} + ' of ' + ${limit} + ' sent today'"></span></h3>
+      <th:block th:each="m : ${mails}">
+        <div th:replace="~{fragments :: mail(${m}, '/jobs/' + ${job.id} + '#outreach')}"></div>
+      </th:block>
+    </div>
+  </section>
+
   <form method="post" th:action="@{/jobs/{id}/notes(id=${job.id})}" class="stack">
     <label for="notes">Notes</label>
     <textarea id="notes" name="notes" rows="3" th:text="${job.notes}"></textarea>

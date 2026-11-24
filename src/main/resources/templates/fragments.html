@@ -12,6 +12,7 @@
   <nav class="tabs">
     <a href="/" th:classappend="${tab == 'board'} ? 'active'">Board</a>
     <a href="/apply" th:classappend="${tab == 'apply'} ? 'active'">Apply</a>
+    <a href="/outreach" th:classappend="${tab == 'outreach'} ? 'active'">Outreach</a>
     <a href="/profile" th:classappend="${tab == 'profile'} ? 'active'">Profile</a>
   </nav>
 </header>
@@ -20,5 +21,42 @@
   <div class="flash" th:if="${message}" th:text="${message}"></div>
   <div class="flash error" th:if="${error}" th:text="${error}"></div>
 </th:block>
+<!-- One email: editable while it's a draft, read-only once sent. Needs: m, job (or null), back -->
+<div th:fragment="mail(m, back)" class="mail" th:classappend="${m.status.name().toLowerCase()}">
+  <div class="mail-head">
+    <span><strong th:text="${m.toName != null ? m.toName + ' · ' : ''} + ${m.toEmail}">to</strong>
+      <span class="pill" th:text="${m.followUp} ? 'Follow-up' : 'First email'">kind</span>
+      <span class="pill" th:text="${m.status.label}">status</span></span>
+    <span class="muted" th:if="${m.sentAt != null}"
+          th:text="'Sent ' + ${#temporals.format(m.sentAt.atZone(T(java.time.ZoneId).systemDefault()), 'dd MMM HH:mm')}">sent</span>
+  </div>
+  <div class="status-line small" th:if="${m.status.name() == 'DRAFTING'}"><span class="spinner"></span><span>The local AI is writing this email… about 20 seconds.</span></div>
+  <div class="status-line small error" th:if="${m.error}" th:text="${m.error}">error</div>
+
+  <form method="post" class="stack" th:if="${m.status.name() == 'DRAFT' or m.status.name() == 'FAILED'}">
+    <input type="hidden" name="back" th:value="${back}">
+    <label th:for="'subj' + ${m.id}">Subject</label>
+    <input th:id="'subj' + ${m.id}" name="subject" th:value="${m.subject}">
+    <label th:for="'body' + ${m.id}">Message</label>
+    <textarea th:id="'body' + ${m.id}" name="body" rows="12" th:text="${m.body}"></textarea>
+    <label class="inline"><input type="checkbox" name="attachResume" value="true" th:checked="${m.attachResume}"> Attach my resume (tailored one if made)</label>
+    <div class="actions">
+      <button type="submit" th:formaction="@{/outreach/{id}/send(id=${m.id})}"
+              onclick="return confirm('Send this email now from your Gmail?')">Send</button>
+      <button type="submit" class="ghost" th:formaction="@{/outreach/{id}/save(id=${m.id})}">Save draft</button>
+      <button type="submit" class="ghost danger" th:formaction="@{/outreach/{id}/delete(id=${m.id})}"
+              onclick="return confirm('Delete this draft?')">Delete</button>
+    </div>
+  </form>
+
+  <th:block th:if="${m.status.name() == 'SENT' or m.status.name() == 'REPLIED'}">
+    <p class="muted small" th:text="'Subject: ' + ${m.subject}">subject</p>
+    <details><summary class="small-link">Show message</summary><pre class="description" th:text="${m.body}">body</pre></details>
+    <form method="post" th:action="@{/outreach/{id}/replied(id=${m.id})}" th:if="${m.status.name() == 'SENT'}" class="actions">
+      <input type="hidden" name="back" th:value="${back}">
+      <button type="submit" class="small ghost">They replied</button>
+    </form>
+  </th:block>
+</div>
 </body>
 </html>

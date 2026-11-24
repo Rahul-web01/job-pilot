@@ -25,6 +25,9 @@ import com.jobpilot.job.Job;
 import com.jobpilot.job.JobRepository;
 import com.jobpilot.job.JobStatus;
 import com.jobpilot.job.TaskState;
+import com.jobpilot.outreach.ContactRepository;
+import com.jobpilot.outreach.OutreachService;
+import com.jobpilot.outreach.OutreachStatus;
 import com.jobpilot.profile.Profile;
 import com.jobpilot.profile.ProfileService;
 import com.jobpilot.tailor.PdfService;
@@ -38,14 +41,18 @@ public class ApplyController {
     private final TailorService tailor;
     private final ApplyService apply;
     private final PdfService pdfs;
+    private final ContactRepository contacts;
+    private final OutreachService outreach;
 
     public ApplyController(JobRepository jobs, ProfileService profiles, TailorService tailor, ApplyService apply,
-            PdfService pdfs) {
+            PdfService pdfs, ContactRepository contacts, OutreachService outreach) {
         this.jobs = jobs;
         this.profiles = profiles;
         this.tailor = tailor;
         this.apply = apply;
         this.pdfs = pdfs;
+        this.contacts = contacts;
+        this.outreach = outreach;
     }
 
     /** The Apply tab: jobs you shortlisted, ready to tailor and apply to. */
@@ -77,7 +84,16 @@ public class ApplyController {
         model.addAttribute("hasCoverPdf", pdfs.file(job, PdfService.COVER_LETTER) != null);
         model.addAttribute("applyUrl", ApplyService.applyUrl(job));
         model.addAttribute("autoFillSupported", "greenhouse".equals(job.getSource()) || "lever".equals(job.getSource()));
-        model.addAttribute("busy", job.getTailorState() == TaskState.RUNNING || job.getApplyState() == TaskState.RUNNING);
+        var mails = outreach.forJob(id);
+        model.addAttribute("contacts", contacts.findByJobIdOrderByConfidenceDescIdAsc(id));
+        model.addAttribute("mails", mails);
+        model.addAttribute("emailedContactIds", mails.stream().filter(m -> !m.isFollowUp()).map(m -> m.getContactId()).toList());
+        model.addAttribute("canSend", p.canSendEmail());
+        model.addAttribute("sentToday", outreach.sentToday());
+        model.addAttribute("limit", p.getDailySendLimitOrDefault());
+        model.addAttribute("hasAnyResume", pdfs.file(job, PdfService.RESUME) != null || profiles.originalResumePdf() != null);
+        model.addAttribute("busy", job.getTailorState() == TaskState.RUNNING || job.getApplyState() == TaskState.RUNNING
+                || mails.stream().anyMatch(m -> m.getStatus() == OutreachStatus.DRAFTING));
         return "job";
     }
 

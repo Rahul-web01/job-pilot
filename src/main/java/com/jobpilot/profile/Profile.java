@@ -57,6 +57,12 @@ public class Profile {
     @Column(columnDefinition = "CLOB")
     private String resumeText;
 
+    // ---- Sending outreach emails (your own Gmail) ----
+    private String smtpEmail;
+    /** Gmail App Password. Stored only in ./data on this computer. */
+    private String smtpPassword;
+    private Integer dailySendLimit;
+
     // ---- Free local AI (Ollama) ----
     private String ollamaUrl;
     private String ollamaModel;
@@ -78,6 +84,14 @@ public class Profile {
 
     public String getFullName() {
         return ((firstName == null ? "" : firstName) + " " + (lastName == null ? "" : lastName)).trim();
+    }
+
+    public boolean canSendEmail() {
+        return notBlank(smtpEmail) && notBlank(smtpPassword);
+    }
+
+    public int getDailySendLimitOrDefault() {
+        return dailySendLimit == null || dailySendLimit < 1 ? 20 : Math.min(dailySendLimit, 100);
     }
 
     public boolean hasResume() {
@@ -139,6 +153,12 @@ public class Profile {
     public void setResumeUploadedAt(Instant v) { this.resumeUploadedAt = v; }
     public String getResumeText() { return resumeText; }
     public void setResumeText(String v) { this.resumeText = v; }
+    public String getSmtpEmail() { return smtpEmail; }
+    public void setSmtpEmail(String v) { this.smtpEmail = v; }
+    public String getSmtpPassword() { return smtpPassword; }
+    public void setSmtpPassword(String v) { this.smtpPassword = v; }
+    public Integer getDailySendLimit() { return dailySendLimit; }
+    public void setDailySendLimit(Integer v) { this.dailySendLimit = v; }
     public String getOllamaUrl() { return ollamaUrl; }
     public void setOllamaUrl(String v) { this.ollamaUrl = v; }
     public String getOllamaModel() { return ollamaModel; }

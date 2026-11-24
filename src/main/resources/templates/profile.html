@@ -21,6 +21,8 @@
         <span class="muted" th:if="${!ollamaOk}"> · not running. Install from ollama.com, then run <code>ollama pull llama3.2</code></span>
         <span class="muted" th:if="${ollamaOk and !modelInstalled}" th:text="' · model not installed. Run: ollama pull ' + ${p.ollamaModel}"></span>
       </li>
+      <li th:classappend="${p.canSendEmail()} ? 'ok' : 'warn'">Gmail for outreach emails
+        <span class="muted" th:unless="${p.canSendEmail()}"> · optional, see "Sending emails" below</span></li>
       <li th:classappend="${chrome} ? 'ok' : 'warn'">Google Chrome for auto-fill
         <span class="muted" th:unless="${chrome}"> · not found; Playwright downloads its own Chromium on first auto-fill</span></li>
     </ul>
@@ -103,6 +105,25 @@
       </div>
     </section>
 
+    <section class="panel" id="email">
+      <h2>Sending emails <span class="muted">(your personal Gmail)</span></h2>
+      <p class="muted">Outreach emails go out from your own Gmail, so replies come back to your inbox. Gmail needs an
+        <strong>App Password</strong> for this, not your normal password: turn on 2-Step Verification, then create one at
+        <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>.
+        It is stored only on this computer.</p>
+      <div class="grid">
+        <label>Gmail address <input type="email" name="smtpEmail" th:value="${p.smtpEmail}" placeholder="you@gmail.com" autocomplete="email"></label>
+        <label>App Password
+          <input type="password" name="smtpPassword" value="" autocomplete="new-password"
+                 th:placeholder="${p.smtpPassword != null} ? 'Saved. Type a new one to replace it' : '16 letters from Google'">
+        </label>
+        <label>Max emails per day
+          <input type="number" name="dailySendLimit" min="1" max="100" th:value="${p.dailySendLimitOrDefault}">
+          <small class="muted">Keep it low (about 20). Lots of cold email gets accounts flagged as spam.</small>
+        </label>
+      </div>
+    </section>
+
     <section class="panel">
       <h2>Local AI</h2>
       <div class="grid">
@@ -120,6 +141,12 @@
       <button type="submit">Save profile</button>
     </div>
   </form>
+
+  <div class="actions" th:if="${p.canSendEmail()}">
+    <form method="post" action="/profile/email-test"><button type="submit" class="ghost">Test Gmail login</button></form>
+    <form method="post" action="/profile/email-forget"><button type="submit" class="ghost danger"
+          onclick="return confirm('Remove the saved App Password from this computer?')">Remove App Password</button></form>
+  </div>
 </main>
 </body>
 </html>

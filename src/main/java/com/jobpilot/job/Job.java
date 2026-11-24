@@ -37,6 +37,9 @@ public class Job {
     /** Company slug on the platform (Greenhouse board / Lever company), used to open the apply form. */
     private String board;
     private String company;
+
+    /** Company website domain (e.g. stripe.com), used to find HR emails. Editable on the job page. */
+    private String companyDomain;
     private String title;
     private String location;
 
@@ -94,6 +97,8 @@ public class Job {
     public void setExternalKey(String externalKey) { this.externalKey = externalKey; }
     public String getFingerprint() { return fingerprint; }
     public void setFingerprint(String fingerprint) { this.fingerprint = fingerprint; }
+    public String getCompanyDomain() { return companyDomain; }
+    public void setCompanyDomain(String v) { this.companyDomain = v; }
     public String getBoard() { return board; }
     public void setBoard(String board) { this.board = board; }
     public TaskState getTailorState() { return tailorState; }
