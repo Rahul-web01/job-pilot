@@ -14,11 +14,9 @@ import com.jobpilot.job.TaskState;
 import com.jobpilot.profile.Profile;
 import com.jobpilot.profile.ProfileService;
 
-import tools.jackson.databind.JsonNode;
-
 /**
  * Writes a tailored summary and cover letter for a job with the local AI, then builds the PDFs.
- * Only the summary is rewritten; your experience, projects and education are copied
+ * Only the summary and cover letter are AI-written; your experience, projects and education are copied
  * from your uploaded resume as-is so the AI cannot invent anything there.
  */
 @Service
@@ -64,9 +62,11 @@ public class TailorService {
         Job job = jobs.findById(jobId).orElseThrow();
         Profile profile = profiles.get();
         try {
-            JsonNode out = ollama.generateJson(profile, prompt(job, profile), java.util.List.of("summary", "cover_letter"));
-            job.setTailoredSummary(clean(out.path("summary").asString()));
-            job.setCoverLetter(clean(out.path("cover_letter").asString()));
+            String context = context(job, profile);
+            String summary = ollama.generate(profile, context + SUMMARY_TASK, 200);
+            String letter = ollama.generate(profile, context + coverTask(profile), 600);
+            job.setTailoredSummary(firstSentences(stripPreamble(summary), 4));
+            job.setCoverLetter(finishLetter(stripPreamble(letter), profile));
             job.setTailoredAt(Instant.now());
             pdfs.writeAll(job, profile);
             job.setTailorState(TaskState.DONE);
@@ -79,8 +79,6 @@ public class TailorService {
             if (hasCause(e, java.net.SocketTimeoutException.class)) {
                 fail(job, "The local AI took longer than 6 minutes. Close other heavy apps and try again,"
                         + " or pick a smaller model on the Profile tab.");
-            } else if (hasCause(e, tools.jackson.core.JacksonException.class)) {
-                fail(job, "The AI's answer came back cut off. Press the button to try again.");
             } else if (hasCause(e, java.net.ConnectException.class) || e instanceof ResourceAccessException) {
                 fail(job, "Can't reach Ollama at " + profile.getOllamaUrl() + ". Install it from ollama.com, run 'ollama pull "
                         + profile.getOllamaModel() + "', and try again.");
@@ -120,26 +118,34 @@ public class TailorService {
         job.setTailorMessage(message.length() > 1000 ? message.substring(0, 1000) : message);
     }
 
-    private static String prompt(Job job, Profile p) {
+    private static final String RULES = """
+
+            Use ONLY facts from the resume. Never invent employers, job titles, years, degrees, numbers or skills.
+            Do not claim soft skills (communication, leadership, teamwork) unless the resume shows them.
+            If the job asks for something the resume does not show, do not claim it.
+            Reply with the text only: no title, no introduction, no notes.
+            """;
+
+    private static final String SUMMARY_TASK = RULES + """
+
+            Write a 3-sentence professional summary for the top of this resume, aimed at this job.
+            Do not use "I". Start like "Backend developer with ..." (use the candidate's own field).
+            """;
+
+    private static String coverTask(Profile p) {
+        return RULES + """
+
+                Write a cover letter of about 200 words in 3 short paragraphs separated by blank lines.
+                Start with "Dear Hiring Team," and end with "Regards," then "%s" on the next line.
+                Paragraph 1: the role and why this company. Paragraph 2: name 2 real projects or results
+                from the resume, with their numbers, that match the job. Paragraph 3: a short, confident close.
+                Plain, natural English.
+                """.formatted(p.getFullName());
+    }
+
+    private static String context(Job job, Profile p) {
         return """
-                You are helping a job seeker apply for a job. Use ONLY facts found in their resume below.
-                Never invent employers, job titles, years, degrees, numbers, or skills they do not have.
-                Do not claim soft skills (communication, leadership, teamwork) unless the resume shows them.
-                If the job wants something the resume does not show, do not claim it.
-                Prefer specific facts from the resume (technologies, projects, numbers) over general praise.
-
-                Write two things:
-                1. "summary": a 3-4 sentence professional summary for the top of the resume, aimed at this job.
-                   Do not use "I"; write it like "Backend developer with ... experienced in ...".
-                2. "cover_letter": a cover letter of 180-250 words in 3 short paragraphs separated by a blank line.
-                   Start with "Dear Hiring Team," and end with "Regards,\\n%s".
-                   Paragraph 1: the role and why this company. Paragraph 2: 2-3 concrete matches between the
-                   resume and the job, each naming a real project, job or result from the resume (with its numbers). Paragraph 3: short, confident close. Plain, natural English, no clichés.
-
-                JOB TITLE: %s
-                COMPANY: %s
-                LOCATION: %s
-
+                JOB: %s at %s (%s)
                 JOB DESCRIPTION:
                 %s
 
@@ -147,11 +153,39 @@ public class TailorService {
                 CANDIDATE RESUME:
                 %s
                 """.formatted(
-                p.getFullName(),
                 job.getTitle(), job.getCompany(), job.getLocation(),
                 cut(job.getDescription(), 6000),
                 p.getFullName(),
                 cut(p.getResumeText(), 7000));
+    }
+
+    /** Drops lines like "Here is a cover letter:" and surrounding quotes that small models add. */
+    static String stripPreamble(String s) {
+        String out = clean(s);
+        out = out.replaceFirst("(?is)^\\s*(here(?:'s| is)[^\\n]*?:)\\s*", "");
+        out = out.replaceAll("^\"|\"$", "").strip();
+        return out;
+    }
+
+    /** Keeps at most n sentences, so a rambling answer still gives a tidy summary. */
+    static String firstSentences(String s, int n) {
+        var m = java.util.regex.Pattern.compile("[^.!?]+[.!?]+").matcher(s.replace("\n", " "));
+        StringBuilder out = new StringBuilder();
+        int count = 0;
+        while (count < n && m.find()) {
+            out.append(m.group().strip()).append(' ');
+            count++;
+        }
+        return count == 0 ? s.strip() : out.toString().strip();
+    }
+
+    /** Makes sure the letter ends with your name, even if the model was cut off. */
+    static String finishLetter(String s, Profile p) {
+        String out = s.strip();
+        if (!out.toLowerCase(java.util.Locale.ROOT).contains("regards")) {
+            out += "\n\nRegards,\n" + p.getFullName();
+        }
+        return out;
     }
 
     private static String cut(String s, int max) {

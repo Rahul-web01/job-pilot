@@ -12,14 +12,12 @@ import org.springframework.web.client.RestClient;
 import com.jobpilot.profile.Profile;
 
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 /** Talks to a local Ollama server (free, runs on your computer). */
 @Component
 public class OllamaClient {
 
     private final RestClient http;
-    private final ObjectMapper json = new ObjectMapper();
 
     public OllamaClient() {
         var factory = new SimpleClientHttpRequestFactory();
@@ -37,30 +35,29 @@ public class OllamaClient {
     }
 
     /**
-     * Asks the model for a JSON object with the given string fields.
-     * Ollama's structured output keeps small models on the expected shape.
+     * Plain-text answer, capped at maxTokens.
+     * (Small models tend to loop when forced into JSON, so we ask for plain text, one thing per call,
+     * with a repetition penalty.)
      */
-    public JsonNode generateJson(Profile profile, String prompt, List<String> fields) {
-        Map<String, Object> properties = new java.util.LinkedHashMap<>();
-        for (String f : fields) {
-            properties.put(f, Map.of("type", "string"));
-        }
+    public String generate(Profile profile, String prompt, int maxTokens) {
         Map<String, Object> body = Map.of(
                 "model", profile.getOllamaModel(),
                 "prompt", prompt,
                 "stream", false,
-                "format", Map.of("type", "object", "properties", properties, "required", fields),
-                // num_predict caps the answer length so a small model can't ramble until the timeout
-                "options", Map.of("temperature", 0.3, "num_ctx", 8192, "num_predict", 900));
+                "options", Map.of(
+                        "temperature", 0.4,
+                        "num_ctx", 8192,
+                        "num_predict", maxTokens,
+                        "repeat_penalty", 1.15));
         JsonNode res = http.post()
                 .uri(profile.getOllamaUrl() + "/api/generate")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
                 .retrieve()
                 .body(JsonNode.class);
-        if (res == null || res.path("response").isMissingNode()) {
+        if (res == null || res.path("response").isMissingNode() || res.path("response").asString().isBlank()) {
             throw new IllegalStateException("Empty answer from Ollama");
         }
-        return json.readTree(res.path("response").asString());
+        return res.path("response").asString();
     }
 }
