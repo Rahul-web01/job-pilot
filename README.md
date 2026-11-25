@@ -1,30 +1,53 @@
+<div align="center">
+
 # JobPilot
 
-A free, private job-search assistant that runs on your own computer.
+**A free, private job-search assistant that runs on your own computer.**
 
-- **Finds jobs** from company career boards (Greenhouse, Lever) and remote job feeds, filtered to your niche.
-- **Scores** each job against your skills, titles and locations.
-- **Tailors** a resume summary and cover letter for each job with a free local AI (Ollama), as PDFs.
-- **Auto-fills** application forms in Chrome: your details, resume and cover letter. You review and press Submit.
+Find jobs, score them against your profile, tailor a resume and cover letter with a local AI,
+auto-fill applications and email HR. No accounts, no API keys, no paid services.
+
+![Java](https://img.shields.io/badge/Java-21%2B-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F?logo=springboot&logoColor=white)
+![Thymeleaf](https://img.shields.io/badge/Thymeleaf-005F0F?logo=thymeleaf&logoColor=white)
+![H2](https://img.shields.io/badge/H2-Database-1E5B9B)
+![Playwright](https://img.shields.io/badge/Playwright-1.63-2EAD33?logo=playwright&logoColor=white)
+![Ollama](https://img.shields.io/badge/Ollama-local%20AI-000000?logo=ollama&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-C71A36?logo=apachemaven&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+</div>
+
+---
+
+## Why
+
+Applying to jobs means the same chores over and over: checking career pages, rewriting cover letters,
+retyping your details into forms, hunting for a recruiter's email. JobPilot automates the repetitive parts
+and leaves every decision (what to apply to, what to send, when to press Submit) to you.
+Your resume and details stay on your machine except when you fill in an application.
+
+## Features
+
+- **Finds jobs** from company career boards (Greenhouse, Lever) and the Remotive remote-jobs feed, filtered to your niche.
+  Search on demand, or let it run automatically every 6 hours while the app is open.
+- **Scores** each job 0–100 against your target titles, skills and locations.
+- **Tailors** a resume summary and cover letter per job with a local AI (Ollama), exported as PDFs.
+- **Auto-fills** Greenhouse and Lever application forms in Chrome with your details, resume and cover letter. You review and press Submit.
 - **Emails HR**: finds published hiring emails for a job, drafts a short note with your resume attached,
   and sends it from your own Gmail when you press Send. Follow-up reminders after 6 days.
-- **Tracks** every job on a board: Found → Shortlisted → Tailored → Applied → HR emailed → Interview → Offer.
+- **Tracks** every job on a board: Found → Shortlisted → Resume tailored → Applied → HR emailed → Interview → Offer (or Rejected / Skipped).
 
-No accounts, no API keys, no paid services. Your resume and details never leave your computer except
-when you fill in an application.
+## Screenshots
 
-Built with Java 21+, Spring Boot 4, H2, Thymeleaf, Playwright, PDFBox and OpenHTMLtoPDF.
-
-## Demo
-
-JobPilot runs on your own computer (it uses your local AI and keeps your resume private), so there is no
-public website to try. These screenshots are from a real run with a made-up demo profile.
+These are from a real run with a made-up demo profile. JobPilot uses your local AI and keeps your resume private,
+so there is no public site to try.
 
 **Board**: 507 real openings found in one search, scored against the profile and tracked through each stage.
 
 ![JobPilot board with scored jobs in pipeline columns](docs/board.png)
 
-**Tailoring**: the local AI (Ollama, llama3.2) wrote this resume summary and cover letter for the job, saved as PDFs.
+**Tailoring**: the local AI (Ollama, llama3.2) wrote this resume summary and cover letter, saved as PDFs.
 
 ![Job page with an AI-written resume summary and cover letter](docs/job.png)
 
@@ -32,157 +55,156 @@ public website to try. These screenshots are from a real run with a made-up demo
 
 ![Apply page listing jobs to apply to and applied jobs](docs/apply.png)
 
----
+## How it works
 
-## 1. Install (once)
+```mermaid
+flowchart LR
+    P[Profile<br/>niche + resume] --> S
+    A[Greenhouse / Lever /<br/>Remotive APIs] --> S[JobSearchService]
+    S --> M[JobMatcher<br/>score 0-100] --> DB[(H2 database)] --> B[Board]
+    B -->|shortlisted| T[TailorService] --> O[Ollama] --> PDF[PdfService<br/>resume + cover letter]
+    PDF --> AP[ApplyService<br/>Playwright + FormFiller] --> U1([you press Submit])
+    B --> E[EmailFinderService<br/>job post + company site] --> OS[OutreachService<br/>Ollama draft] --> U2([you press Send]) --> G[Gmail SMTP]
+```
+
+**Design choices**
+
+- **Score** = title match 30 + your skills found in the description (up to 50) + preferred location 20.
+  Titles containing your "skip" words are dropped.
+- **Tailoring is honest by design.** Only the summary and cover letter are AI-written. Experience, projects and
+  education are copied from your resume word for word, so the AI can't invent a job or skill.
+- **Cover letters are built, not free-written.** JobPilot splits your resume into roles and projects, picks the
+  best-matching internship or job and project, and asks the AI to rewrite only those lines. If a paragraph adds a
+  number, technology or cliché ("excited", "passion"…) that isn't in your resume, a plain version of your own
+  lines is used instead. Still read every letter: a small local model can word a fact oddly.
+- **Outreach is opt-in, one email at a time.** Nothing is sent without your click, there is a daily limit
+  (20 by default, adjustable on the Profile tab), every email offers an easy opt-out, and guessed addresses are
+  labelled as guesses. The email finder respects `robots.txt`.
+- **Auto-fill never submits.** Screening questions and CAPTCHAs make automated submissions unreliable, so the final click is yours.
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Language | Java 21+ |
+| Framework | Spring Boot 4.1 (Web MVC, Data JPA, Validation, Mail, Scheduling) |
+| UI | Thymeleaf server-rendered pages |
+| Database | H2, file-based, stored in `./data` |
+| AI | Ollama over its local HTTP API (default model `llama3.2`) |
+| Browser automation | Playwright for Java |
+| PDF | PDFBox (read resume), OpenHTMLtoPDF (generate resume and cover letter) |
+| HTML parsing | jsoup |
+| Testing | JUnit 5, AssertJ, GreenMail (fake SMTP server) |
+
+## Getting started
+
+### Prerequisites
 
 | What | Why | How |
 |---|---|---|
 | **Java 21 or newer** | Runs the app | Linux: `sudo apt install openjdk-21-jdk` · Mac/Windows: [adoptium.net](https://adoptium.net) |
-| **Ollama** | Free local AI for resume and cover letter | [ollama.com/download](https://ollama.com/download), then `ollama pull llama3.2` |
+| **Ollama** | Local AI for resume and cover letter | [ollama.com/download](https://ollama.com/download), then `ollama pull llama3.2` |
 | **Google Chrome** | Auto-filling forms | Optional. Without it, Playwright downloads its own Chromium the first time. |
 | **Gmail App Password** | Sending outreach emails | Optional. Turn on 2-Step Verification, then create one at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords). |
 
-You do **not** need Maven. The included `mvnw` script downloads it.
+You do **not** need Maven installed: the included `mvnw` wrapper downloads it.
 
-## 2. Get the code
+### Run
 
 ```bash
 git clone https://github.com/Rahul-web01/job-pilot.git
 cd job-pilot
-```
-
-(Or download the ZIP from GitHub and unzip it.)
-
-## 3. Run
-
-Linux / Mac:
-
-```bash
 ./mvnw spring-boot:run
 ```
 
-Windows:
+On Windows, use `mvnw.cmd spring-boot:run` instead of the last line.
 
-```bat
-mvnw.cmd spring-boot:run
-```
-
-The first start takes a few minutes while it downloads libraries. When you see `Started JobPilotApplication`,
+The first start takes a few minutes while dependencies download. When you see `Started JobPilotApplication`,
 open **http://localhost:8080**. Stop it with **Ctrl+C**.
 
-### Start it automatically (Linux)
-
-So you don't need a terminal open, install it as a background service that starts when you log in:
+### Start automatically on login (Linux with systemd)
 
 ```bash
 ./scripts/install-autostart.sh
 ```
 
-Then just open **http://localhost:8080** any time. Run the same script again after pulling new code.
-Check it with `systemctl --user status jobpilot`, see logs with `journalctl --user -u jobpilot -f`,
-and undo it with `./scripts/uninstall-autostart.sh` (your data is kept).
+This builds the jar and installs a user service, so http://localhost:8080 is available whenever you are logged in.
+Re-run it after pulling new code. Check it with `systemctl --user status jobpilot` and follow logs with
+`journalctl --user -u jobpilot -f`. To remove it, run `./scripts/uninstall-autostart.sh` (your data is kept).
 
-## 4. Use it
-
-1. **Profile tab**
-   - Upload your resume (PDF). Check the text it read and fix anything jumbled.
-   - Fill in your details (name, email, phone, LinkedIn…). These go into application forms.
-   - Set your **niche**: job titles to look for, your skills, words to skip (e.g. `senior`), preferred locations.
-   - Add companies to search: the name from `boards.greenhouse.io/<name>` or `jobs.lever.co/<name>`.
-   - Save. The setup checklist at the top turns green when everything is ready.
-2. **Board tab**
-   - Press **Search jobs now**. It also searches by itself every 6 hours while running.
-   - Filter by title, company, location, source and minimum score.
-   - Move jobs you like to **Shortlisted** with the dropdown on each card.
-3. **Apply tab**
-   - **Tailor**: the AI writes a summary for the top of your resume and a cover letter for that job
-     (30 seconds to a few minutes). Open the job to read and edit them; the PDFs rebuild when you save.
-   - **Auto-fill**: Chrome opens the real application form and fills your details, resume and cover letter.
-     It lists questions only you can answer. **Check everything and press Submit yourself.**
-   - **Submitted**: moves the job to Applied.
-4. **Email HR** (bottom of each job's page)
-   - **Find emails** reads the job post and the company's own public pages (careers, contact, about) and
-     lists the addresses it finds, with where each came from and how much to trust it. If nothing HR-like is
-     published, it adds `careers@` / `hr@` / `recruiting@` as clearly marked guesses.
-   - Know a recruiter's name? **Add someone yourself** with just the name, and it adds the usual address
-     patterns (first.last@…) as guesses. Or paste an address you already know.
-   - **Write email**: the local AI drafts a short note (greeting, 2 short paragraphs, your signature, a polite
-     opt-out line) with your resume attached. Edit it, then press **Send**. It goes from your Gmail.
-   - The **Outreach** tab lists drafts, sent emails and follow-ups due after 6 days (one per contact).
-5. Back on the **Board**, move jobs to Interview / Offer / Rejected as replies come in.
-
-## How it works
-
-```
-Profile (niche, resume) ─┐
-                         ▼
-Greenhouse / Lever / Remotive APIs ─▶ JobSearchService ─▶ JobMatcher (score 0–100) ─▶ H2 database ─▶ Board
-                                                                                          │
-                     Shortlisted job ─▶ TailorService ─▶ Ollama (local AI) ─▶ PdfService ─▶ resume.pdf + cover-letter.pdf
-                                                                                          │
-                                       ApplyService ─▶ Playwright + Chrome ─▶ FormFiller ─▶ you press Submit
-                                                                                          │
-   EmailFinderService (job post + company site, robots.txt) ─▶ contacts ─▶ OutreachService ─▶ Ollama draft
-                                                                                          └▶ you press Send ─▶ Gmail SMTP
-```
-
-- **Score** = title match 30 + your skills found in the description (up to 50) + preferred location 20.
-- **Tailoring is honest by design.** Only the summary and cover letter are AI-written. Your experience,
-  projects and education are copied from your own resume word for word, so the AI can't invent a job or skill.
-- **Cover letters are built, not free-written.** JobPilot splits your resume into roles and projects, picks your
-  best-matching internship or job and your best-matching project, and asks the AI to rewrite only those lines.
-  Each paragraph is checked: if it adds a number, technology or cliché ("excited", "passion"…) that isn't in your
-  resume, a plain version of your own lines is used instead. The opening and closing are fixed, and the letter
-  points to your portfolio. Still read every letter before sending: a small local model can word a fact oddly.
-- **Outreach is opt-in, one email at a time.** Nothing is sent without your click, there's a daily limit
-  (20 by default), and every email offers an easy opt-out. Guessed addresses are labelled as guesses.
-- **Auto-fill never submits.** Automated submissions often go wrong (wrong answers to screening questions,
-  CAPTCHAs), so the final click is always yours.
-
-### Code map
-
-| Folder (`src/main/java/com/jobpilot/`) | What it does |
-|---|---|
-| `source/` | One class per job platform. Add a platform by adding a class that implements `JobSource`. |
-| `search/` | Runs all sources, scores, removes duplicates, saves. |
-| `profile/` | Your profile and resume upload (PDF text extraction). |
-| `tailor/` | Ollama client, prompt, PDF generation. Templates in `resources/templates/pdf/`. |
-| `apply/` | Playwright form filling for Greenhouse and Lever. |
-| `outreach/` | Email finder (job post, company site, patterns), drafting, Gmail sending, follow-ups. |
-| `web/` | Pages: Board, Apply, Outreach, Profile, job details. |
-
-### Your data
-
-Everything is in the `data/` folder next to the app: the database (including your Gmail App Password, if you
-saved one), your uploaded resume and the generated PDFs per job. Back it up if you care about your history; delete it to start fresh. It is in `.gitignore`, so
-it is never pushed to GitHub.
-
-## Sharing with friends
-
-Each person runs their own copy on their own computer (steps 1–3 above). That keeps it free, and everyone's
-resume and job list stays private. The app only listens on `localhost`, so nobody else on your Wi-Fi can open it.
-
-## Tests
+### Run the tests
 
 ```bash
 ./mvnw test
 ```
 
-`FormFillerTest` fills a local copy of a Greenhouse-style form with fake data (needs Chrome) and checks
-that it never submits. `MailServiceTest` sends through a fake local mail server, so nothing really goes out.
+`FormFillerTest` fills a local Greenhouse-style form with fake data and checks that it never submits
+(skipped if Chrome is not installed). `MailServiceTest` sends through a fake local mail server, so nothing really goes out.
+
+## Usage
+
+1. **Profile**: upload your resume (PDF) and check the extracted text; fill in your details (name, email, phone, LinkedIn…);
+   set your niche (job titles, skills, words to skip such as `senior`, preferred locations); add companies by their
+   board name from `boards.greenhouse.io/<name>` or `jobs.lever.co/<name>`. The setup checklist turns green when everything is ready.
+2. **Board**: press **Search jobs now**, filter by title, company, location, source and minimum score, and move jobs you like to **Shortlisted**.
+3. **Apply**
+   - **Tailor**: the AI writes a resume summary and cover letter for the job (30 seconds to a few minutes). Edit them on the job page; the PDFs rebuild when you save.
+   - **Auto-fill**: Chrome opens the real application form, fills it, and lists questions only you can answer. **Check everything and press Submit yourself.**
+   - **Submitted**: moves the job to Applied.
+4. **Email HR** (bottom of each job page)
+   - **Find emails** reads the job post and the company's public pages (careers, contact, about) and lists addresses with their source
+     and how much to trust them. If nothing HR-like is published, it adds `careers@` / `hr@` / `recruiting@` as marked guesses.
+   - **Add someone yourself** with a recruiter's name to get the usual address patterns (first.last@…) as guesses, or paste a known address.
+   - **Write email**: the AI drafts a short note with your resume attached. Edit it, then press **Send**.
+   - The **Outreach** tab lists drafts, sent emails and follow-ups due after 6 days. Press **They replied** when someone answers.
+5. Back on the **Board**, move jobs to Interview / Offer / Rejected as replies come in.
+
+## Project structure
+
+```
+job-pilot/
+├── src/main/java/com/jobpilot/
+│   ├── source/     # One class per job platform (implement JobSource to add one)
+│   ├── search/     # Runs all sources, scores, de-duplicates, saves
+│   ├── profile/    # Profile and resume upload (PDF text extraction)
+│   ├── tailor/     # Ollama client, prompts, PDF generation
+│   ├── apply/      # Playwright form filling for Greenhouse and Lever
+│   ├── outreach/   # Email finder, drafting, Gmail sending, follow-ups
+│   ├── job/        # Job entity and pipeline statuses
+│   ├── config/     # App properties and HTTP client setup
+│   └── web/        # Controllers for Board, Apply, Outreach, Profile and job pages
+├── src/main/resources/
+│   ├── templates/  # Thymeleaf pages, plus pdf/ templates for resume and cover letter
+│   └── application.yml
+├── scripts/        # Linux autostart install / uninstall
+└── docs/           # Screenshots
+```
+
+## Privacy and your data
+
+- The app listens only on `127.0.0.1`, so nobody else on your network can open it.
+- Everything lives in the `data/` folder next to the app: the database (including your Gmail App Password, if saved),
+  your uploaded resume and the generated PDFs. On Linux and Mac the folder is made readable only by your user account.
+- `data/` is in `.gitignore`, so it is never pushed. Back it up to keep your history; delete it to start fresh.
+- To share with friends, each person runs their own copy. That keeps it free and keeps everyone's data private.
 
 ## Limits
 
 - Auto-fill covers Greenhouse and Lever forms. For other sites, open the posting and use the PDFs.
-- LinkedIn, Naukri and Indeed are not scraped. Their terms forbid it and accounts get banned.
-- Many companies don't publish a hiring email. Then you'll only get guesses, which may bounce. A recruiter's
-  name from the careers page or LinkedIn (looked up by you) plus "Add someone yourself" works better.
-- Replies aren't read automatically yet: press **They replied** when someone answers.
-- The small default model (`llama3.2`) writes simply. Bigger free models (`ollama pull qwen2.5:7b`, then set it on
+- LinkedIn, Naukri and Indeed are not scraped: their terms forbid it and accounts get banned.
+- Many companies don't publish a hiring email, so you may only get guesses, which can bounce. A recruiter's name
+  (looked up by you) plus **Add someone yourself** works better.
+- Replies aren't read automatically yet.
+- The default model (`llama3.2`) writes simply. Larger models (for example `ollama pull qwen2.5:7b`, then set it on
   the Profile tab) write better but need more RAM and time.
-- The tailored resume is a clean, plain layout built from your resume text. If you prefer your own design,
-  use your original PDF.
+- The tailored resume uses a clean, plain layout built from your resume text. If you prefer your own design, use your original PDF.
+
+## What I learned
+
+- Putting several third-party job APIs behind one `JobSource` interface.
+- Driving a real browser with Playwright and filling forms that differ from site to site.
+- Using a small local LLM carefully: constraining what it writes and checking every fact against the source resume.
+- Building a private, local-first app with Spring Boot, Thymeleaf and an embedded database.
 
 ## Roadmap
 
@@ -193,6 +215,21 @@ that it never submits. `MailServiceTest` sends through a fake local mail server,
 - [x] Find HR emails, draft and send outreach, follow-up reminders
 - [ ] Read Gmail replies and move jobs to Interview / Rejected automatically
 
+## Author
+
+**Rahul Singh**
+
+[![GitHub](https://img.shields.io/badge/GitHub-Rahul--web01-181717?logo=github)](https://github.com/Rahul-web01)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-rahul--singh--cs-0A66C2?logo=linkedin)](https://www.linkedin.com/in/rahul-singh-cs)
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+
+If you found this useful, consider giving it a ⭐
+
+</div>
