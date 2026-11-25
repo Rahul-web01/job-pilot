@@ -42,7 +42,7 @@ public class GreenhouseSource implements JobSource {
                     continue;
                 }
                 for (JsonNode j : root.path("jobs")) {
-                    String company = Json.text(j, "company_name");
+                    String company = cleanCompany(Json.text(j, "company_name"));
                     out.add(new JobPosting(
                             name(),
                             Json.text(j, "id"),
@@ -59,5 +59,14 @@ public class GreenhouseSource implements JobSource {
             }
         }
         return out;
+    }
+
+    /** "Rubrik Job Board" → "Rubrik", "HackerRank Careers" → "HackerRank": board names, not company names. */
+    static String cleanCompany(String name) {
+        if (name == null) {
+            return null;
+        }
+        String c = name.replaceAll("(?i)\\s*[-–|]?\\s*(job board|jobs board|careers?( page| site)?|jobs|hiring)\\s*$", "").strip();
+        return c.isEmpty() ? name.strip() : c;
     }
 }

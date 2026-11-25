@@ -46,6 +46,47 @@ class ResumeEntriesTest {
         assertThat(entries).noneMatch(e -> e.body().contains("github.com"));
     }
 
+    /** Dates on their own line under each title, as many resume templates do. */
+    static final String DATES_BELOW = """
+            EXPERIENCE
+            Full Stack Intern, Acme – Billing Service
+            Jul 2026 – Aug 2026
+            Live: billing.example.app | GitHub: github.com/asha/billing
+            • Built a billing service in Java 17 and Spring Boot with 7 endpoints.
+            • Wrote 40 tests with JUnit 5.
+            Java Intern, Beta Corp
+            May 2026 – Jun 2026
+            • Built a console inventory app in Java with 5 modules.
+            PROJECTS
+            Kafka Ledger – Event Pipeline | JPMorgan Chase Job Simulation (Forage)
+            Jun 2026
+            GitHub: github.com/asha/ledger | Java 17, Apache Kafka
+            • Consumed payment events from Apache Kafka and stored them with JPA.
+            EDUCATION
+            B.Tech, CSE
+            2023 – 2027 (Expected)
+            """;
+
+    @Test
+    void joinsTitleWithDatesOnTheNextLine() {
+        List<ResumeEntries.Entry> entries = ResumeEntries.parse(DATES_BELOW);
+        assertThat(entries).extracting(ResumeEntries.Entry::name).containsExactly(
+                "Full Stack Intern, Acme – Billing Service", "Java Intern, Beta Corp",
+                "Kafka Ledger – Event Pipeline");
+        // the next role's title must not leak into the previous role's details
+        assertThat(entries.get(0).body()).doesNotContain("Beta Corp");
+        assertThat(TailorService.plainParagraph(entries.get(0))).startsWith("As a Full Stack Intern at Acme, I built");
+        assertThat(TailorService.plainParagraph(entries.get(2))).startsWith("For Kafka Ledger, I consumed");
+    }
+
+    @Test
+    void recognisesDateOnlyLines() {
+        assertThat(ResumeEntries.DATES_ONLY.matcher("Jul 2026 – Aug 2026").matches()).isTrue();
+        assertThat(ResumeEntries.DATES_ONLY.matcher("Jun 2026").matches()).isTrue();
+        assertThat(ResumeEntries.DATES_ONLY.matcher("2025 - Present").matches()).isTrue();
+        assertThat(ResumeEntries.DATES_ONLY.matcher("Built 7 APIs in 2026").matches()).isFalse();
+    }
+
     @Test
     void picksBestRoleThenBestOtherEntry() {
         String job = "Payments backend engineer. You will build payment services with Java, Kafka and PostgreSQL.";

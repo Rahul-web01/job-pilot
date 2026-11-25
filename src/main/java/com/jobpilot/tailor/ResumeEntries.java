@@ -30,7 +30,11 @@ final class ResumeEntries {
     }
 
     private static final Pattern YEAR = Pattern.compile("\\b(19|20)\\d{2}\\b");
-    private static final Pattern BULLET = Pattern.compile("^[•\\-–◦▪*·]\\s*");
+    /** A line with only a date or date range: "Jun 2026", "Jul 2026 – Aug 2026", "2025 - Present". */
+    static final Pattern DATES_ONLY = Pattern.compile("(?i)\\(?((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s*)?"
+            + "(19|20)\\d{2}(\\s*([–—-]|to)\\s*(((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s*)?(19|20)\\d{2}"
+            + "|present|current|now))?\\)?");
+    private static final Pattern BULLET =Pattern.compile("^[•\\-–◦▪*·]\\s*");
     private static final Set<String> STOP = Set.of("with", "that", "this", "from", "into", "using", "used", "their",
             "your", "they", "have", "will", "work", "role", "team", "years", "year", "experience", "built", "build",
             "and", "the", "for", "each", "every", "across", "over", "under", "about", "also", "which", "while");
@@ -54,11 +58,9 @@ final class ResumeEntries {
         String title = null;
         StringBuilder body = new StringBuilder();
         boolean exp = false;
-        for (String raw : resume.split("\\R")) {
-            String line = raw.replace('\u00A0', ' ').strip();
-            if (line.isEmpty()) {
-                continue;
-            }
+        List<String> lines = resume.lines().map(l -> l.replace('\u00A0', ' ').strip()).filter(l -> !l.isEmpty()).toList();
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
             String heading = heading(line);
             if (heading != null) {
                 title = flush(out, title, body, exp);
@@ -71,6 +73,15 @@ final class ResumeEntries {
                 continue;
             }
             boolean bullet = BULLET.matcher(line).find();
+            // Title on one line and its dates alone on the next ("Java Intern, Acme" / "May 2026 – Jun 2026"):
+            // join them, so the dates line doesn't become a nameless title
+            if (!bullet && !YEAR.matcher(line).find() && !isLinkLine(line) && i + 1 < lines.size()
+                    && DATES_ONLY.matcher(lines.get(i + 1)).matches()) {
+                title = flush(out, title, body, exp);
+                title = line + " " + lines.get(++i);
+                exp = !section.contains("PROJECT");
+                continue;
+            }
             if (!bullet && YEAR.matcher(line).find()) {
                 title = flush(out, title, body, exp);
                 title = line;
