@@ -38,6 +38,34 @@ public class Profile {
     private String expectedSalary;
     private String workAuthorization;
 
+    // ---- Answers to common application questions (Profile tab → Application answers) ----
+    private String country;
+    private String school;
+    private String degree;
+    private String discipline;
+    private String startYear;
+    private String gradMonth;
+    private String gradYear;
+    private String cgpa;
+    private String currentTitle;
+    @Column(length = 500)
+    private String primaryLanguage;
+    @Column(length = 4000)
+    private String openSourceLinks;
+    private String fullTimeStart;
+    private String internshipAvailable;
+    private String onsiteOk;
+    private String needsSponsorship;
+    @Column(length = 1000)
+    private String offerDeadlines;
+    private String howHeard;
+    private String codeforcesRating;
+    private String codechefRating;
+    private String preferredName;
+    private String pronouns;
+    @Column(length = 4000)
+    private String customAnswers;
+
     // ---- Niche and filters (one item per line) ----
     @Column(length = 4000) private String targetTitles;
     @Column(length = 4000) private String skills;
@@ -133,6 +161,50 @@ public class Profile {
     public void setExpectedSalary(String v) { this.expectedSalary = v; }
     public String getWorkAuthorization() { return workAuthorization; }
     public void setWorkAuthorization(String v) { this.workAuthorization = v; }
+    public String getCountry() { return country; }
+    public void setCountry(String v) { this.country = v; }
+    public String getSchool() { return school; }
+    public void setSchool(String v) { this.school = v; }
+    public String getDegree() { return degree; }
+    public void setDegree(String v) { this.degree = v; }
+    public String getDiscipline() { return discipline; }
+    public void setDiscipline(String v) { this.discipline = v; }
+    public String getStartYear() { return startYear; }
+    public void setStartYear(String v) { this.startYear = v; }
+    public String getGradMonth() { return gradMonth; }
+    public void setGradMonth(String v) { this.gradMonth = v; }
+    public String getGradYear() { return gradYear; }
+    public void setGradYear(String v) { this.gradYear = v; }
+    public String getCgpa() { return cgpa; }
+    public void setCgpa(String v) { this.cgpa = v; }
+    public String getCurrentTitle() { return currentTitle; }
+    public void setCurrentTitle(String v) { this.currentTitle = v; }
+    public String getPrimaryLanguage() { return primaryLanguage; }
+    public void setPrimaryLanguage(String v) { this.primaryLanguage = v; }
+    public String getOpenSourceLinks() { return openSourceLinks; }
+    public void setOpenSourceLinks(String v) { this.openSourceLinks = v; }
+    public String getFullTimeStart() { return fullTimeStart; }
+    public void setFullTimeStart(String v) { this.fullTimeStart = v; }
+    public String getInternshipAvailable() { return internshipAvailable; }
+    public void setInternshipAvailable(String v) { this.internshipAvailable = v; }
+    public String getOnsiteOk() { return onsiteOk; }
+    public void setOnsiteOk(String v) { this.onsiteOk = v; }
+    public String getNeedsSponsorship() { return needsSponsorship; }
+    public void setNeedsSponsorship(String v) { this.needsSponsorship = v; }
+    public String getOfferDeadlines() { return offerDeadlines; }
+    public void setOfferDeadlines(String v) { this.offerDeadlines = v; }
+    public String getHowHeard() { return howHeard; }
+    public void setHowHeard(String v) { this.howHeard = v; }
+    public String getCodeforcesRating() { return codeforcesRating; }
+    public void setCodeforcesRating(String v) { this.codeforcesRating = v; }
+    public String getCodechefRating() { return codechefRating; }
+    public void setCodechefRating(String v) { this.codechefRating = v; }
+    public String getPreferredName() { return preferredName; }
+    public void setPreferredName(String v) { this.preferredName = v; }
+    public String getPronouns() { return pronouns; }
+    public void setPronouns(String v) { this.pronouns = v; }
+    public String getCustomAnswers() { return customAnswers; }
+    public void setCustomAnswers(String v) { this.customAnswers = v; }
     public String getTargetTitles() { return targetTitles; }
     public void setTargetTitles(String v) { this.targetTitles = v; }
     public String getSkills() { return skills; }

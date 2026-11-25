@@ -66,6 +66,55 @@
       </div>
     </section>
 
+    <section class="panel" id="answers">
+      <h2>Application answers <span class="muted">(Auto-fill uses these to answer form questions)</span></h2>
+      <p class="muted">Leave a box empty and Auto-fill leaves that question for you. Open questions like "Why do you want
+        to join us?" are written by the local AI from your resume and marked so you can check them. Legal agreements
+        (NDAs, "I acknowledge…") and optional diversity questions are always left for you.</p>
+      <div class="grid">
+        <label>Country you live in <input name="country" th:value="${p.country}" placeholder="e.g. India"></label>
+        <label>Need visa sponsorship?
+          <select name="needsSponsorship">
+            <option value="" th:selected="${p.needsSponsorship == null or p.needsSponsorship == ''}">Leave for me</option>
+            <option value="No" th:selected="${p.needsSponsorship == 'No'}">No</option>
+            <option value="Yes" th:selected="${p.needsSponsorship == 'Yes'}">Yes</option>
+          </select></label>
+        <label>Current or last job title <input name="currentTitle" th:value="${p.currentTitle}" placeholder="e.g. Java Full Stack Intern"></label>
+        <label>School / university <input name="school" th:value="${p.school}"></label>
+        <label>Degree <input name="degree" th:value="${p.degree}" placeholder="e.g. Bachelor's Degree / B.Tech"></label>
+        <label>Discipline / branch <input name="discipline" th:value="${p.discipline}" placeholder="e.g. Computer Science"></label>
+        <label>Start year <input name="startYear" th:value="${p.startYear}" placeholder="e.g. 2023"></label>
+        <label>Graduation month <input name="gradMonth" th:value="${p.gradMonth}" placeholder="e.g. June"></label>
+        <label>Graduation year <input name="gradYear" th:value="${p.gradYear}" placeholder="e.g. 2027"></label>
+        <label>CGPA / GPA <input name="cgpa" th:value="${p.cgpa}" placeholder="e.g. 8.2/10"></label>
+        <label>Primary language / framework <input name="primaryLanguage" th:value="${p.primaryLanguage}" placeholder="e.g. Java with Spring Boot"></label>
+        <label>Can start full-time from <input name="fullTimeStart" th:value="${p.fullTimeStart}" placeholder="e.g. July 2027 or Immediately"></label>
+        <label>Available for full-time internships?
+          <select name="internshipAvailable">
+            <option value="" th:selected="${p.internshipAvailable == null or p.internshipAvailable == ''}">Leave for me</option>
+            <option value="Yes" th:selected="${p.internshipAvailable == 'Yes'}">Yes</option>
+            <option value="No" th:selected="${p.internshipAvailable == 'No'}">No</option>
+          </select></label>
+        <label>OK to work onsite / relocate?
+          <select name="onsiteOk">
+            <option value="" th:selected="${p.onsiteOk == null or p.onsiteOk == ''}">Leave for me</option>
+            <option value="Yes" th:selected="${p.onsiteOk == 'Yes'}">Yes</option>
+            <option value="No" th:selected="${p.onsiteOk == 'No'}">No</option>
+          </select></label>
+        <label>Offer deadlines <input name="offerDeadlines" th:value="${p.offerDeadlines}" placeholder="e.g. No active offer deadlines"></label>
+        <label>How did you hear about the job? <input name="howHeard" th:value="${p.howHeard}" placeholder="e.g. Company careers page"></label>
+        <label>Codeforces rating <input name="codeforcesRating" th:value="${p.codeforcesRating}" placeholder="e.g. 1450 or N/A"></label>
+        <label>CodeChef rating <input name="codechefRating" th:value="${p.codechefRating}" placeholder="e.g. 3★ / N/A"></label>
+        <label>Preferred name <input name="preferredName" th:value="${p.preferredName}" placeholder="optional"></label>
+        <label>Pronouns <input name="pronouns" th:value="${p.pronouns}" placeholder="optional"></label>
+        <label class="wide">Open-source projects / portfolio links
+          <textarea name="openSourceLinks" rows="5" th:text="${p.openSourceLinks}"></textarea></label>
+        <label class="wide">Your own answers <span class="muted">(one per line: words from the question = your answer)</span>
+          <textarea name="customAnswers" rows="5" th:text="${p.customAnswers}"
+                    placeholder="hackerrank = https://www.hackerrank.com/profile/you&#10;leetcode = 600+ problems solved&#10;relocate to bangalore = Yes"></textarea></label>
+      </div>
+    </section>
+
     <section class="panel">
       <h2>Your niche <span class="muted">(one per line)</span></h2>
       <div class="grid">

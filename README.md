@@ -33,7 +33,7 @@ Your resume and details stay on your machine except when you fill in an applicat
   Search on demand, or let it run automatically every 6 hours while the app is open.
 - **Scores** each job 0–100 against your target titles, skills and locations.
 - **Tailors** a resume summary and cover letter per job with a local AI (Ollama), exported as PDFs.
-- **Auto-fills** Greenhouse and Lever application forms in Chrome with your details, resume and cover letter. You review and press Submit.
+- **Auto-fills** Greenhouse and Lever application forms in Chrome with your details, resume and cover letter, and **answers the screening questions** (dropdowns, multi-choice, text) from your Profile. You review and press Submit.
 - **Emails HR**: finds published hiring emails for a job, drafts a short note with your resume attached,
   and sends it from your own Gmail when you press Send. Follow-up reminders after 6 days.
 - **Tracks** every job on a board: Found → Shortlisted → Resume tailored → Applied → HR emailed → Interview → Offer (or Rejected / Skipped).
@@ -149,7 +149,11 @@ Re-run it after pulling new code. Check it with `systemctl --user status jobpilo
 2. **Board**: press **Search jobs now**, filter by title, company, location, source and minimum score, and move jobs you like to **Shortlisted**.
 3. **Apply**
    - **Tailor**: the AI writes a resume summary and cover letter for the job (30 seconds to a few minutes). Edit them on the job page; the PDFs rebuild when you save.
-   - **Auto-fill**: Chrome opens the real application form, fills it, and lists questions only you can answer. **Check everything and press Submit yourself.**
+   - **Auto-fill**: Chrome opens the real application form, fills it, and answers the screening questions from
+     **Profile → Application answers** (country, sponsorship, school, degree, graduation, CGPA, availability, open-source
+     links, plus your own "question words = answer" lines). Open questions like "Why us?" are drafted by the local AI
+     from your resume and flagged for you to read. Legal agreements, optional diversity questions and facts missing from
+     your Profile are always left for you. **Check everything and press Submit yourself.**
    - **Submitted**: moves the job to Applied.
 4. **Email HR** (bottom of each job page)
    - **Find emails** reads the job post and the company's public pages (careers, contact, about) and lists addresses with their source
@@ -212,6 +216,7 @@ job-pilot/
 - [x] Profile tab with resume upload and niche settings
 - [x] Tailored resume and cover letter with local AI
 - [x] Auto-fill Greenhouse and Lever applications
+- [x] Answer screening questions from your Profile
 - [x] Find HR emails, draft and send outreach, follow-up reminders
 - [ ] Read Gmail replies and move jobs to Interview / Rejected automatically
 

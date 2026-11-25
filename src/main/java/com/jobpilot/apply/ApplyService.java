@@ -17,6 +17,7 @@ import com.jobpilot.job.JobRepository;
 import com.jobpilot.job.TaskState;
 import com.jobpilot.profile.Profile;
 import com.jobpilot.profile.ProfileService;
+import com.jobpilot.tailor.OllamaClient;
 import com.jobpilot.tailor.PdfService;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
@@ -44,15 +45,17 @@ public class ApplyService {
     private final JobRepository jobs;
     private final ProfileService profiles;
     private final PdfService pdfs;
+    private final OllamaClient ollama;
     private final boolean headless;
     private Playwright playwright;
     private Browser browser;
 
-    public ApplyService(JobRepository jobs, ProfileService profiles, PdfService pdfs,
+    public ApplyService(JobRepository jobs, ProfileService profiles, PdfService pdfs, OllamaClient ollama,
             @Value("${jobpilot.browser-headless:false}") boolean headless) {
         this.jobs = jobs;
         this.profiles = profiles;
         this.pdfs = pdfs;
+        this.ollama = ollama;
         this.headless = headless;
     }
 
@@ -96,7 +99,7 @@ public class ApplyService {
             if (resume == null) {
                 resume = profiles.originalResumePdf();
             }
-            var result = new FormFiller(page, profile).fill(
+            var result = new FormFiller(page, profile, job, (question, kind) -> aiAnswer(question, kind, job, profile)).fill(
                     resume == null ? null : new FormFiller.Upload(resume, PdfService.niceName(profile, job, "Resume")),
                     pdfs.file(job, PdfService.COVER_LETTER) == null ? null
                             : new FormFiller.Upload(pdfs.file(job, PdfService.COVER_LETTER),
@@ -108,8 +111,15 @@ public class ApplyService {
             msg.append(result.filled().isEmpty()
                     ? "Opened the form but could not recognise any fields. Fill it in yourself in the Chrome window."
                     : "Filled: " + String.join(", ", result.filled()) + ".");
+            if (!result.aiWritten().isEmpty()) {
+                msg.append(" Written by the local AI, read these first: ").append(String.join(" · ", result.aiWritten())).append(".");
+            }
+            if (!result.legal().isEmpty()) {
+                msg.append(" Agreements for you to read and accept yourself: ").append(String.join(" · ", result.legal())).append(".");
+            }
             if (!result.needsYou().isEmpty()) {
-                msg.append(" Still needs you: ").append(String.join(" · ", result.needsYou())).append(".");
+                msg.append(" Still needs you: ").append(String.join(" · ", result.needsYou()))
+                        .append(". Add the answers on the Profile tab (Application answers) and Auto-fill can do them next time.");
             }
             msg.append(" Check everything in the Chrome window, press Submit there, then click \"I submitted it\".");
             job.setApplyState(TaskState.DONE);
@@ -120,6 +130,38 @@ public class ApplyService {
             job.setApplyMessage(cut("Could not fill the form: " + e.getMessage(), 4000));
         }
         jobs.save(job);
+    }
+
+    /** Short first-person answer to an open question, from the resume only. Null if the AI can't answer honestly. */
+    private String aiAnswer(String question, String kind, Job job, Profile p) {
+        try {
+            String answer = ollama.generate(p, """
+                    JOB: %s at %s
+                    JOB DESCRIPTION (start):
+                    %s
+
+                    CANDIDATE: %s
+                    RESUME:
+                    %s
+
+                    The application form asks: "%s"
+                    Answer it for the candidate in the first person, in %s, using ONLY facts from the resume.
+                    Never invent employers, numbers, dates, grades, ratings or skills. Plain, natural English.
+                    If the resume does not contain what is needed to answer truthfully, reply with exactly: SKIP
+                    Reply with the answer text only.
+                    """.formatted(job.getTitle(), job.getCompany(), cut(nz(job.getDescription()), 2500), p.getFullName(),
+                    cut(nz(p.getResumeText()), 6000), question,
+                    kind.equals("textarea") ? "2 to 4 sentences (max 90 words)" : "one short sentence"), 200).strip();
+            answer = answer.replaceFirst("(?is)^\\s*(here(?:'s| is)[^\\n]*?:)\\s*", "").replaceAll("^\"|\"$", "").strip();
+            return answer.isEmpty() || answer.toUpperCase(java.util.Locale.ROOT).startsWith("SKIP") ? null : answer;
+        } catch (RuntimeException e) {
+            log.debug("AI answer failed for {}", question, e);
+            return null;
+        }
+    }
+
+    private static String nz(String s) {
+        return s == null ? "" : s;
     }
 
     private Browser browser() {
