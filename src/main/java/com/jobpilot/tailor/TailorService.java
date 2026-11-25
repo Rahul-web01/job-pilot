@@ -61,6 +61,16 @@ public class TailorService {
         Thread.ofVirtual().name("tailor-" + jobId).start(() -> run(jobId));
     }
 
+    /** Tailors now, on the caller's thread (used by Autopilot). Returns true if it worked. */
+    public boolean tailorNow(long jobId) {
+        Job job = jobs.findById(jobId).orElseThrow();
+        job.setTailorState(TaskState.RUNNING);
+        job.setTailorMessage("Autopilot is writing this with " + profiles.get().getOllamaModel() + "…");
+        jobs.save(job);
+        run(jobId);
+        return jobs.findById(jobId).map(j -> j.getTailorState() == TaskState.DONE).orElse(false);
+    }
+
     private void run(long jobId) {
         Job job = jobs.findById(jobId).orElseThrow();
         Profile profile = profiles.get();

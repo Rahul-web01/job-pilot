@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,10 +35,13 @@ public class JobSearchService {
     private final JobMatcher matcher;
     private final JobRepository jobs;
     private final ProfileService profiles;
+    private final ApplicationEventPublisher events;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile RunSummary lastRun;
 
-    public JobSearchService(List<JobSource> sources, JobMatcher matcher, JobRepository jobs, ProfileService profiles) {
+    public JobSearchService(List<JobSource> sources, JobMatcher matcher, JobRepository jobs, ProfileService profiles,
+            ApplicationEventPublisher events) {
+        this.events = events;
         this.sources = sources;
         this.matcher = matcher;
         this.jobs = jobs;
@@ -71,6 +75,7 @@ public class JobSearchService {
             log.info("Search already running, skipping");
             return;
         }
+        SearchFinishedEvent finished = null;
         try {
             Profile profile = profiles.get();
             Map<String, int[]> perSource = new LinkedHashMap<>();
@@ -94,10 +99,14 @@ public class JobSearchService {
                 log.info("{}: fetched {}, matched {}, new {}", source.name(), counts[0], counts[1], counts[2]);
             }
             lastRun = new RunSummary(Instant.now(), perSource, added);
+            finished = new SearchFinishedEvent(added);
         } catch (Exception e) {
             log.error("Job search failed", e);
         } finally {
             running.set(false);
+        }
+        if (finished != null) {
+            events.publishEvent(finished); // Autopilot carries on from here
         }
     }
 

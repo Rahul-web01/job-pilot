@@ -31,7 +31,10 @@ Your resume and details stay on your machine except when you fill in an applicat
 
 - **Finds jobs** from company career boards (Greenhouse, Lever) and the Remotive remote-jobs feed, filtered to your niche.
   Search on demand, or let it run automatically every 6 hours while the app is open.
-- **Scores** each job 0–100 against your target titles, skills and locations.
+- **Scores** each job 0–100 against your target titles, skills and locations, adjusted for your experience level
+  (a fresher gets internships and new-grad roles boosted and senior roles dropped).
+- **Autopilot**: after every search it shortlists jobs scoring 70+ (your choice), tailors their resume and cover letter,
+  and auto-fills their applications, one by one. It never presses Submit and pauses when too many filled forms are waiting.
 - **Tailors** a resume summary and cover letter per job with a local AI (Ollama), exported as PDFs.
 - **Auto-fills** Greenhouse and Lever application forms in Chrome with your details, resume and cover letter, and **answers the screening questions** (dropdowns, multi-choice, text) from your Profile. You review and press Submit.
 - **Emails HR**: finds published hiring emails for a job, drafts a short note with your resume attached,
@@ -161,7 +164,10 @@ Re-run it after pulling new code. Check it with `systemctl --user status jobpilo
    - **Add someone yourself** with a recruiter's name to get the usual address patterns (first.last@…) as guesses, or paste a known address.
    - **Write email**: the AI drafts a short note with your resume attached. Edit it, then press **Send**.
    - The **Outreach** tab lists drafts, sent emails and follow-ups due after 6 days. Press **They replied** when someone answers.
-5. Back on the **Board**, move jobs to Interview / Offer / Rejected as replies come in.
+5. **Autopilot** (optional): pick Fresher or Experienced (and your years), switch on Shortlist / Tailor / Auto-fill, set the
+   minimum score (default 70) and limits (jobs per run, forms waiting). After each search it does those steps for you;
+   the tab lists filled forms waiting for your Submit and a log of what it did.
+6. Back on the **Board**, move jobs to Interview / Offer / Rejected as replies come in.
 
 ## Project structure
 
@@ -173,10 +179,11 @@ job-pilot/
 │   ├── profile/    # Profile and resume upload (PDF text extraction)
 │   ├── tailor/     # Ollama client, prompts, PDF generation
 │   ├── apply/      # Playwright form filling for Greenhouse and Lever
+│   ├── autopilot/  # Shortlist → tailor → auto-fill after each search
 │   ├── outreach/   # Email finder, drafting, Gmail sending, follow-ups
 │   ├── job/        # Job entity and pipeline statuses
 │   ├── config/     # App properties and HTTP client setup
-│   └── web/        # Controllers for Board, Apply, Outreach, Profile and job pages
+│   └── web/        # Controllers for Board, Autopilot, Apply, Outreach, Profile and job pages
 ├── src/main/resources/
 │   ├── templates/  # Thymeleaf pages, plus pdf/ templates for resume and cover letter
 │   └── application.yml

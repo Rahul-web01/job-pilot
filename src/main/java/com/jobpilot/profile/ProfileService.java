@@ -90,6 +90,22 @@ public class ProfileService {
         return repo.save(p);
     }
 
+    /** Saves the Autopilot tab: experience level and automation switches. */
+    @Transactional
+    public Profile saveAutopilot(String level, String years, boolean shortlist, Integer minScore, boolean tailor, boolean fill,
+            Integer maxPerRun, Integer maxWaiting) {
+        Profile p = get();
+        p.setExperienceLevel("FRESHER".equals(level) || "EXPERIENCED".equals(level) ? level : null);
+        p.setYearsExperience("FRESHER".equals(level) ? "0" : clean(years));
+        p.setAutoShortlist(shortlist);
+        p.setAutoMinScore(minScore);
+        p.setAutoTailor(tailor);
+        p.setAutoFill(fill);
+        p.setAutoMaxPerRun(maxPerRun);
+        p.setAutoMaxWaiting(maxWaiting);
+        return repo.save(p);
+    }
+
     @Transactional
     public void forgetEmailPassword() {
         Profile p = get();

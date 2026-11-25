@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Autopilot · JobPilot')}"></head>
+<body>
+<meta th:if="${running}" http-equiv="refresh" content="6">
+<header th:replace="~{fragments :: nav}"></header>
+<th:block th:replace="~{fragments :: flash}"></th:block>
+
+<main class="detail wide">
+  <h1>Autopilot</h1>
+  <p class="muted">After every job search (yours, or the automatic one every 6 hours) Autopilot can shortlist the best
+    matches, tailor your resume and cover letter for each, and fill in their application forms in Chrome. It never
+    presses Submit: each filled form waits for you to check it, answer anything left, and submit.</p>
+
+  <div class="status-line" th:if="${running}"><span class="spinner"></span><span th:text="${step != '' ? step : 'Working…'}">step</span></div>
+
+  <section class="stats autopilot-stats">
+    <div class="stat"><span class="num" th:text="${aboveMin}">0</span><span th:text="'Found, scoring ' + ${p.autoMinScore} + '+'">Found</span></div>
+    <div class="stat"><span class="num" th:text="${shortlisted}">0</span><span>Shortlisted</span></div>
+    <div class="stat"><span class="num" th:text="${tailored}">0</span><span>Tailored</span></div>
+    <div class="stat"><span class="num" th:text="${waiting.size()}">0</span><span>Filled, waiting for you</span></div>
+    <div class="stat"><span class="num" th:text="${applied}">0</span><span>Applied</span></div>
+  </section>
+
+  <form method="post" action="/autopilot/settings">
+    <section class="panel">
+      <h2>Your experience level</h2>
+      <p class="muted">Decides which jobs fit you. Saving a change re-scores all saved jobs.</p>
+      <div class="choice-row">
+        <label class="choice"><input type="radio" name="experienceLevel" value="FRESHER" th:checked="${p.experienceLevel == 'FRESHER'}">
+          <span><strong>Fresher</strong><br><small class="muted">Student or new graduate. Senior, Staff, Lead, "Engineer 2/3" and
+            jobs asking 3+ years are dropped; Intern, New Grad, Junior and Associate roles get +25.</small></span></label>
+        <label class="choice"><input type="radio" name="experienceLevel" value="EXPERIENCED" th:checked="${p.experienceLevel == 'EXPERIENCED'}">
+          <span><strong>Experienced</strong><br><small class="muted">Internships and new-grad roles are dropped, and so are jobs
+            asking for more than your years + 2.</small></span></label>
+        <label class="choice"><input type="radio" name="experienceLevel" value="" th:checked="${p.experienceLevel == null or p.experienceLevel == ''}">
+          <span><strong>Don't filter</strong><br><small class="muted">Score jobs on skills, title and location only.</small></span></label>
+      </div>
+      <label class="inline years">Years of experience
+        <input type="number" name="years" min="0" max="40" step="0.5" th:value="${p.yearsExperience}" placeholder="e.g. 2">
+        <small class="muted">(for Experienced; a fresher is saved as 0)</small></label>
+    </section>
+
+    <section class="panel">
+      <h2>What Autopilot does after each search</h2>
+      <div class="steps">
+        <label class="step-row"><input type="checkbox" name="autoShortlist" value="true" th:checked="${p.autoShortlist}">
+          <span><strong>1 · Shortlist</strong> jobs scoring at least
+            <input type="number" name="autoMinScore" min="0" max="100" step="5" th:value="${p.autoMinScore}" class="tiny"></span></label>
+        <label class="step-row"><input type="checkbox" name="autoTailor" value="true" th:checked="${p.autoTailor}">
+          <span><strong>2 · Tailor</strong> a resume and cover letter for each shortlisted job <small class="muted">(local AI, about 2–3 minutes each)</small></span></label>
+        <label class="step-row"><input type="checkbox" name="autoFill" value="true" th:checked="${p.autoFill}">
+          <span><strong>3 · Auto-fill</strong> each tailored job's application in Chrome <small class="muted">(Greenhouse and Lever; you press Submit)</small></span></label>
+      </div>
+      <div class="grid">
+        <label>Most jobs per run <input type="number" name="autoMaxPerRun" min="1" max="30" th:value="${p.autoMaxPerRun}">
+          <small class="muted">Keeps each run short.</small></label>
+        <label>Pause filling when this many forms are waiting <input type="number" name="autoMaxWaiting" min="1" max="20" th:value="${p.autoMaxWaiting}">
+          <small class="muted">So Chrome windows don't pile up. Submit them and it carries on.</small></label>
+      </div>
+      <div class="actions"><button type="submit">Save</button></div>
+    </section>
+  </form>
+
+  <section class="panel">
+    <h2>Run it now</h2>
+    <div class="actions">
+      <form method="post" action="/autopilot/run"><input type="hidden" name="withSearch" value="true">
+        <button type="submit" th:disabled="${running}">Search, then run Autopilot</button></form>
+      <form method="post" action="/autopilot/run"><input type="hidden" name="withSearch" value="false">
+        <button type="submit" class="ghost" th:disabled="${running}">Run on jobs I already have</button></form>
+    </div>
+  </section>
+
+  <section class="panel" th:unless="${waiting.isEmpty()}">
+    <h2>Filled forms waiting for you <span class="count" th:text="${waiting.size()}">0</span></h2>
+    <p class="muted">Each is open in a Chrome window. Check it, answer anything left, press Submit there, then click Submitted here.</p>
+    <table class="queue">
+      <tbody>
+      <tr th:each="j : ${waiting}">
+        <td><a class="title" th:href="@{/jobs/{id}(id=${j.id})}" th:text="${j.title}">T</a>
+          <div class="meta" th:text="${j.company} + ' · ' + ${j.location}">co</div>
+          <div class="meta muted" th:text="${j.applyMessage}">msg</div></td>
+        <td><form method="post" th:action="@{/jobs/{id}/submitted(id=${j.id})}"><input type="hidden" name="back" value="/autopilot">
+          <button type="submit" class="small">Submitted</button></form></td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>What Autopilot did</h2>
+    <p class="muted" th:if="${history.isEmpty()}">Nothing yet. It runs after the next search.</p>
+    <ul class="log">
+      <li th:each="e : ${history}"><span class="muted" th:text="${#temporals.format(e.at.atZone(T(java.time.ZoneId).systemDefault()), 'dd MMM HH:mm')}">t</span>
+        <span th:text="${e.text}">text</span></li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

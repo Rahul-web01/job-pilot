@@ -75,6 +75,20 @@ public class ApplyService {
         return job.getUrl();
     }
 
+    /** Fills the form now and waits until it's done (used by Autopilot). Returns true if it worked. */
+    public boolean fillNow(long jobId) {
+        Job job = jobs.findById(jobId).orElseThrow();
+        job.setApplyState(TaskState.RUNNING);
+        job.setApplyMessage("Autopilot is opening the form in Chrome…");
+        jobs.save(job);
+        try {
+            browserThread.submit(() -> run(jobId)).get(5, java.util.concurrent.TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.warn("Autopilot auto-fill for job {} failed", jobId, e);
+        }
+        return jobs.findById(jobId).map(j -> j.getApplyState() == TaskState.DONE).orElse(false);
+    }
+
     public void startInBackground(long jobId) {
         Job job = jobs.findById(jobId).orElseThrow();
         if (job.getApplyState() == TaskState.RUNNING) {

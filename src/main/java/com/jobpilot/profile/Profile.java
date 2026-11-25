@@ -66,6 +66,16 @@ public class Profile {
     @Column(length = 4000)
     private String customAnswers;
 
+    // ---- Experience level and Autopilot (Autopilot tab) ----
+    /** FRESHER or EXPERIENCED; empty = not set (no experience filtering). */
+    private String experienceLevel;
+    private Boolean autoShortlist;
+    private Integer autoMinScore;
+    private Boolean autoTailor;
+    private Boolean autoFill;
+    private Integer autoMaxPerRun;
+    private Integer autoMaxWaiting;
+
     // ---- Niche and filters (one item per line) ----
     @Column(length = 4000) private String targetTitles;
     @Column(length = 4000) private String skills;
@@ -205,6 +215,22 @@ public class Profile {
     public void setPronouns(String v) { this.pronouns = v; }
     public String getCustomAnswers() { return customAnswers; }
     public void setCustomAnswers(String v) { this.customAnswers = v; }
+    public String getExperienceLevel() { return experienceLevel; }
+    public void setExperienceLevel(String v) { this.experienceLevel = v; }
+    public boolean isAutoShortlist() { return Boolean.TRUE.equals(autoShortlist); }
+    public void setAutoShortlist(Boolean v) { this.autoShortlist = v; }
+    public int getAutoMinScore() { return autoMinScore == null ? 70 : Math.max(0, Math.min(100, autoMinScore)); }
+    public void setAutoMinScore(Integer v) { this.autoMinScore = v; }
+    public boolean isAutoTailor() { return Boolean.TRUE.equals(autoTailor); }
+    public void setAutoTailor(Boolean v) { this.autoTailor = v; }
+    public boolean isAutoFill() { return Boolean.TRUE.equals(autoFill); }
+    public void setAutoFill(Boolean v) { this.autoFill = v; }
+    /** Most jobs Autopilot takes on per run (tailoring takes ~2-3 minutes each). */
+    public int getAutoMaxPerRun() { return autoMaxPerRun == null ? 5 : Math.max(1, Math.min(30, autoMaxPerRun)); }
+    public void setAutoMaxPerRun(Integer v) { this.autoMaxPerRun = v; }
+    /** Most filled-in forms left open waiting for your Submit, so Chrome windows don't pile up. */
+    public int getAutoMaxWaiting() { return autoMaxWaiting == null ? 5 : Math.max(1, Math.min(20, autoMaxWaiting)); }
+    public void setAutoMaxWaiting(Integer v) { this.autoMaxWaiting = v; }
     public String getTargetTitles() { return targetTitles; }
     public void setTargetTitles(String v) { this.targetTitles = v; }
     public String getSkills() { return skills; }
